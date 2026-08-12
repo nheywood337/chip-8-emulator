@@ -25,4 +25,6 @@ bool chip8::load_rom(const std::string& path) {
         std::cout << "Successfully read " << ROM_SIZE << " bytes." << std::endl;
         return true;
     }
+
+    return false;
 }
