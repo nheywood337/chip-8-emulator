@@ -1,9 +1,11 @@
+#pragma once
+
 #include <cstdint>
 #include <array>
 #include <string>
 
 
-constexpr uint16_t MEMORY_SIZE = 4096;
+constexpr size_t MEMORY_SIZE = 4096;
 constexpr uint16_t START_ADDRESS_OFFSET = 0x200;
 
 class chip8 {
