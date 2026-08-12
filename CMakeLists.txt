@@ -9,6 +9,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 add_executable(chip8
     src/main.cpp
     src/chip8.cpp
+    src/rom_loader.cpp
 )
 
 target_include_directories(chip8 PRIVATE include)

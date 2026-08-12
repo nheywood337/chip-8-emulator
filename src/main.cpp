@@ -1,19 +1,19 @@
 #include <iostream>
 #include <string>
+#include <cstdlib>
 #include "chip8.h"
 
 int main(int argc, char* argv[]) {
     if (argc != 2) {
-        std::cerr << "Invalid execution, use ./chip8 <PATH_TO_ROM>" << std::endl;
-        return -1;
+        std::cerr << "ERROR: Invalid execution, use ./chip8 <PATH_TO_ROM>" << std::endl;
+        return EXIT_FAILURE;
     }
 
     const std::string ROM_TO_LOAD = argv[1];
-    chip8 chip;
+    chip8 chip(ROM_TO_LOAD);
 
-    // ROM load failure
-    if (!chip.load_rom(ROM_TO_LOAD)) {
-        return -1;
+    if (!chip.load_rom_into_memory()) {
+        return EXIT_FAILURE;
     }
 
     return 0;

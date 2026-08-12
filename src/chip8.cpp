@@ -1,34 +1,28 @@
 #include "chip8.h"
+#include "rom_loader.h"
 #include <fstream>
 #include <iostream>
+#include <algorithm>
 
-// loads the rom, returns true if successful
-bool chip8::load_rom(const std::string& path) {
-    std::ifstream file(path, std::ios::binary | std::ios::ate);
+chip8::chip8(const std::string& path) {
+    rom_path = path;
+}
 
-    // check if file can open successfully 
-    if (!file.is_open()) {
-        std::cerr << "Failed to open: " << path << std::endl;
+bool chip8::load_rom_into_memory() {
+    auto result = read_rom_bytes(rom_path);
+
+    // guard clause for read
+    if (!result) {
         return false;
     }
 
-    // determine rom size
-    const std::streamsize ROM_SIZE = file.tellg();
-
-    // determine if ROM size is too large for our buffer
-    if (ROM_SIZE > (MEMORY_SIZE - START_ADDRESS)) {
-        std::cerr << "ROM is too large for CHIP-8 memory!" << std::endl;
+    if (result->size() + START_ADDRESS_OFFSET <= MEMORY_SIZE) {
+        std::copy(result->begin(), result->end(), memory.begin() + START_ADDRESS_OFFSET);
+        std::cout << "[chip8] INFO: Successfully loaded " << result->size() << " bytes into memory." << std::endl;
+    }
+    else {
+        std::cerr << "[chip8] ERROR: Rom is too large for buffer!" << std::endl;
         return false;
     }
-
-    // rewind pointer to begining for read
-    file.seekg(0, std::ios::beg);
-
-    // read data into our fixed memory buffer
-    if (file.read(reinterpret_cast<char*>(memory.data() + START_ADDRESS), ROM_SIZE)) {
-        std::cout << "Successfully read " << ROM_SIZE << " bytes." << std::endl;
-        return true;
-    }
-
-    return false;
+    return true;
 }
