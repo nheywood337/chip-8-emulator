@@ -9,7 +9,7 @@ chip8::chip8(const std::string& path) {
 }
 
 bool chip8::load_rom_into_memory() {
-    auto result = read_rom_bytes(rom_path);
+    auto result = rom_loader::read_rom_bytes(rom_path);
 
     // guard clause for read
     if (!result) {
