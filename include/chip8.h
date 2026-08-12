@@ -9,7 +9,8 @@
 class chip8 {
     public:
         chip8(const std::string& path);
-        // populates memory buffer
+
+        // Populates the memory buffer using the rom_path member variable
         bool load_rom_into_memory();
 
     private:

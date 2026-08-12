@@ -6,6 +6,7 @@
 #include "rom_loader.h"
 
 namespace rom_loader {
+
     std::optional<std::vector<uint8_t>> read_rom_bytes(const std::string& rom_path) {
         std::ifstream rom(rom_path, std::ios::binary | std::ios::ate);
 
