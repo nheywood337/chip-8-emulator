@@ -30,8 +30,8 @@ namespace disassembler {
             std::optional<std::string> maybe_mnemonic = mnemonic(decoded);
             std::string mnemonic_text = maybe_mnemonic.value_or("unknown"); // default to unknown if we dont support opcode
 
-            std::string formatted = "opcode: " + to_hex(combined, 4) + " address: " 
-                + to_hex(addr, 4) + " command: " + mnemonic_text;
+            std::string formatted = "opcode: " + to_hex_string(combined, 4) + " address: " 
+                + to_hex_string(addr, 4) + " command: " + mnemonic_text;
 
             result.push_back(formatted);
         }
@@ -52,12 +52,49 @@ namespace disassembler {
 
             // could be 00E0, 00EE, or 0nnn
             case (0x0):
-                if (instruction.nn == 0xE0) return "CLS"; // clear screen
-                else if (instruction.nn == 0xEE) return "RET"; // return from subrutine to address on stack
+                // clear screen
+                if (instruction.nn == 0xE0) return "CLS";
+
+                // return from subrutine to address on stack
+                else if (instruction.nn == 0xEE) return "RET";
+
+                // jump to native assembler subroutine at 0xNNN
                 else {
-                    return "SYS " + to_hex(instruction.nnn, 3); // jump to native assembler subroutine at 0xNNN
+                    return "SYS " + to_hex_string(instruction.nnn, 3);
                 }
+
+            case (0x1):
+                // jump to address NNN
+                return "JP " + to_hex_string(instruction.nnn, 3);
+
+            case (0x2):
+                // push return address onto stack and call subroutine at address NNN
+                return "CALL " + to_hex_string(instruction.nnn, 3);
+
+            case (0x3):
+                // skip-if-equal : vX == NN
+                return "SE v" + to_register_string(instruction.x) + ", " + to_hex_string(instruction.nn, 2);
             
+            case (0x4):
+                // skip-if-not-equal : vX != NN
+                return "SNE v" + to_register_string(instruction.x) + ", " + to_hex_string(instruction.nn, 2);
+            
+            case (0x5):
+                // skip-if-equal : vX == vY
+                return "SE v" + to_register_string(instruction.x) + ", v" + to_register_string(instruction.y);
+
+            case (0x6):
+                // set vX to NN
+                return "SET v" + to_register_string(instruction.x) + ", " + to_hex_string(instruction.nn, 2);
+            
+            case (0x7):
+                // 	add vX to NN
+                return "ADD v" + to_register_string(instruction.x) + to_hex_string(instruction.nn, 2);
+
+            case (0x8):
+                // set vX to the value of vY
+                return "SET v" + to_register_string(instruction.x) + ", v" + to_hex_string(instruction.y, 2);
+
             default:
                 return std::nullopt;
         }
@@ -74,7 +111,15 @@ namespace disassembler {
         return oss.str();
     }
 
-    std::string to_hex(uint16_t value, int width) {
+    std::string to_register_string(uint8_t val) {
+        std::ostringstream oss;
+        oss << std::hex << static_cast<int>(val);
+        std::string formatted = oss.str();
+
+        return formatted;
+    }
+
+    std::string to_hex_string(uint16_t value, int width) {
         std::ostringstream oss;
 
         oss << std::hex << std::setw(width) << std::setfill('0') << value;
