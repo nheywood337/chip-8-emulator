@@ -49,8 +49,12 @@ int main(int argc, char* argv[]) {
         if (!result) {
             return EXIT_FAILURE;
         }
-        
+
         auto output = disassembler::disassemble(*result);
+
+        if (!output) {
+            return EXIT_FAILURE;
+        }
 
         for (const auto& line : *output) {
             std::cout << line << std::endl;
