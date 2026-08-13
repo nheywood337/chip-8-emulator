@@ -13,6 +13,7 @@ namespace disassembler {
     // converts <uint8_t rom_bytes> to vector<string> ; returns std::nullopt if malformed ROM
     std::optional<std::vector<std::string>> disassemble(const std::vector<uint8_t>& rom_bytes) {
         std::vector<std::string> result;
+        result.push_back(" ADR |  OP  | INSTRUCTION");
         
         for (size_t i = 0; i < rom_bytes.size(); i+=2) {
             if (i+1 >= rom_bytes.size()) {
@@ -30,8 +31,8 @@ namespace disassembler {
             std::optional<std::string> maybe_mnemonic = mnemonic(decoded);
             std::string mnemonic_text = maybe_mnemonic.value_or("unknown"); // default to unknown if we dont support opcode
 
-            std::string formatted = "opcode: " + to_hex_string(combined, 4) + " address: " 
-                + to_hex_string(addr, 4) + " command: " + mnemonic_text;
+            std::string formatted = to_hex_string(addr, 4) + " | " 
+                + to_hex_string(combined, 4) + " | " + mnemonic_text;
 
             result.push_back(formatted);
         }
