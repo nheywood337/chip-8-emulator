@@ -34,6 +34,12 @@ int main(int argc, char* argv[]) {
     MODE mode = MODE::INIT;
 
     mode = initialize_mode(argv[1]);
+
+    if (mode == FAILURE) {
+        std::cerr << "ERROR: Invalid flag " << argv[1] << std::endl;
+        return EXIT_FAILURE;
+    }
+
     const std::string ROM_TO_LOAD = argv[2];
 
     if (mode == MODE::RUN) {
