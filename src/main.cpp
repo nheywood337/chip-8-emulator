@@ -50,7 +50,7 @@ int main(int argc, char* argv[]) {
             return EXIT_FAILURE;
         }
         
-        std::vector<std::string> output = disassembler::disassemble(*result);
+        auto output = disassembler::disassemble(*result);
 
         for (const auto& line : output) {
             std::cout << line << std::endl;

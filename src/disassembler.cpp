@@ -1,15 +1,20 @@
 #include "disassembler.h"
 #include <string>
 #include <iostream>
-#include <sstream> // temporary debugging
-#include <iomanip> // temporary debugging
+#include <sstream>
+#include <iomanip>
+#include <optional>
 
 namespace disassembler {
-    std::vector<std::string> disassemble(const std::vector<uint8_t>& rom_bytes) {
+    // converts <uint8_t rom_bytes> to vector<string> ; returns std::nullopt if malformed ROM
+    std::optional<std::vector<std::string>> disassemble(const std::vector<uint8_t>& rom_bytes) {
         std::vector<std::string> result;
         
         for (size_t i = 0; i < rom_bytes.size(); i+=2) {
-            if (i+1 >= rom_bytes.size()) break;
+            if (i+1 >= rom_bytes.size()) {
+                std::cerr << "[disassembler]: Malformed ROM Detected!" << std::endl;
+                return std::nullopt;
+            }
 
             uint8_t byte_hi = rom_bytes[i];
             uint8_t byte_lo = rom_bytes[i+1];
