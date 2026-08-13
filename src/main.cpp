@@ -63,6 +63,7 @@ int main(int argc, char* argv[]) {
         }
 
         for (const auto& line : *output) {
+            std::cout << " ADR |  OP  | INSTRUCTION" << std::endl; // print header
             std::cout << line << std::endl;
         }
     }

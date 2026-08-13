@@ -13,7 +13,6 @@ namespace disassembler {
     // converts <uint8_t rom_bytes> to vector<string> ; returns std::nullopt if malformed ROM
     std::optional<std::vector<std::string>> disassemble(const std::vector<uint8_t>& rom_bytes) {
         std::vector<std::string> result;
-        result.push_back(" ADR |  OP  | INSTRUCTION");
         
         for (size_t i = 0; i < rom_bytes.size(); i+=2) {
             if (i+1 >= rom_bytes.size()) {
