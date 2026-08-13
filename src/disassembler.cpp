@@ -20,7 +20,7 @@ namespace disassembler {
             uint8_t byte_lo = rom_bytes[i+1];
             uint16_t combined = (static_cast<uint16_t>(byte_hi) << 8) | static_cast<uint16_t>(byte_lo);    
 
-            // format opcodes
+            // format opcode for string
             std::ostringstream oss;
             oss << std::hex << std::setw(4) << std::setfill('0') << combined;
             std::string formatted = oss.str();

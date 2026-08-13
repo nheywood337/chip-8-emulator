@@ -52,7 +52,7 @@ int main(int argc, char* argv[]) {
         
         auto output = disassembler::disassemble(*result);
 
-        for (const auto& line : output) {
+        for (const auto& line : *output) {
             std::cout << line << std::endl;
         }
     }
