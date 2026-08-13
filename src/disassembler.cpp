@@ -30,8 +30,8 @@ namespace disassembler {
             std::optional<std::string> maybe_mnemonic = mnemonic(decoded);
             std::string mnemonic_text = maybe_mnemonic.value_or("unknown"); // default to unknown if we dont support opcode
 
-            std::string formatted = to_hex(combined, 4) + " address: " 
-                + to_hex(addr, 4) + " " + mnemonic_text + " ";
+            std::string formatted = "opcode: " + to_hex(combined, 4) + " address: " 
+                + to_hex(addr, 4) + " command: " + mnemonic_text;
 
             result.push_back(formatted);
         }
