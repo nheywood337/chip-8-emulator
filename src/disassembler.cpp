@@ -32,6 +32,8 @@ namespace disassembler {
 
             std::string formatted = to_hex(combined, 4) + " address: " 
                 + to_hex(addr, 4) + " " + mnemonic_text + " ";
+
+            result.push_back(formatted);
         }
         
         return result;
@@ -57,7 +59,6 @@ namespace disassembler {
                 }
             
             default:
-                std::cerr << "[disassembler] WARN: Unsupported instruction" << std::endl;
                 return std::nullopt;
         }
     }
