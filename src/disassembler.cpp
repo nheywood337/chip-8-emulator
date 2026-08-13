@@ -44,62 +44,140 @@ namespace disassembler {
         // ex: [0x00E0]
         //   f = 0  :   dictates call type
         //   x = 0
-        //   e = E
+        //   y = E
         //   n = 0
         //  nn = E0
         // nnn = 0E0
+
+        // OUR TARGET: COSMAC VIP CHIP-8
         switch (instruction.f) {
 
             // could be 00E0, 00EE, or 0nnn
             case (0x0):
-                // clear screen
+                // CLS
                 if (instruction.nn == 0xE0) return "CLS";
 
-                // return from subrutine to address on stack
+                // RET
                 else if (instruction.nn == 0xEE) return "RET";
 
-                // jump to native assembler subroutine at 0xNNN
+                // SYS addr
                 else {
                     return "SYS " + to_hex_string(instruction.nnn, 3);
                 }
 
             case (0x1):
-                // jump to address NNN
+                // JP addr
                 return "JP " + to_hex_string(instruction.nnn, 3);
 
             case (0x2):
-                // push return address onto stack and call subroutine at address NNN
+                // CALL addr
                 return "CALL " + to_hex_string(instruction.nnn, 3);
 
             case (0x3):
-                // skip-if-equal : vX == NN
-                return "SE v" + to_register_string(instruction.x) + ", " + to_hex_string(instruction.nn, 2);
+                // SE Vx, byte
+                return "SE V" + to_register_string(instruction.x) + ", " + to_hex_string(instruction.nn, 2);
             
             case (0x4):
-                // skip-if-not-equal : vX != NN
-                return "SNE v" + to_register_string(instruction.x) + ", " + to_hex_string(instruction.nn, 2);
+                // SNE Vx, byte
+                return "SNE V" + to_register_string(instruction.x) + ", " + to_hex_string(instruction.nn, 2);
             
             case (0x5):
-                // skip-if-equal : vX == vY
-                return "SE v" + to_register_string(instruction.x) + ", v" + to_register_string(instruction.y);
+                // SE Vx, Vy
+                return "SE V" + to_register_string(instruction.x) + ", V" + to_register_string(instruction.y);
 
             case (0x6):
-                // set vX to NN
-                return "SET v" + to_register_string(instruction.x) + ", " + to_hex_string(instruction.nn, 2);
+                // LD Vx, byte
+                return "LD V" + to_register_string(instruction.x) + ", " + to_hex_string(instruction.nn, 2);
             
             case (0x7):
-                // 	add vX to NN
-                return "ADD v" + to_register_string(instruction.x) + to_hex_string(instruction.nn, 2);
+                // 	ADD Vx, byte
+                return "ADD V" + to_register_string(instruction.x) + ", " + to_hex_string(instruction.nn, 2);
 
+            // could be 8xy0, 8xy1, 8xy2, 8xy3, 8xy4, 8xy5, 8xy6
             case (0x8):
-                // set vX to the value of vY
-                return "SET v" + to_register_string(instruction.x) + ", v" + to_hex_string(instruction.y, 2);
+                switch (instruction.n) {
+                    case (0):
+                        // LD Vx, Vy
+                        return "LD V" + to_register_string(instruction.x) + ", V" + to_register_string(instruction.y);
+                    
+                    case (1):
+                        // OR Vx, Vy <COSMAC based variants will reset VF>
+                        return "OR V" + to_register_string(instruction.x) + ", V" + to_register_string(instruction.y);
+                
+                    case (2):
+                        // AND Vx, Vy <COSMAC based variants will reset VF>
+                        return "AND V" + to_register_string(instruction.x) + ", V" + to_register_string(instruction.y);
+                
+                    case (3):
+                        // XOR Vx, Vy <COSMAC based variants will reset VF>
+                        return "XOR V" + to_register_string(instruction.x) + ", V" + to_register_string(instruction.y);
 
+                    case (4):
+                        // ADD Vx, Vy
+                        return "ADD V" + to_register_string(instruction.x) + ", V" + to_register_string(instruction.y);
+
+                    case (5):
+                        // SUB Vx, Vy
+                        return "SUB V" + to_register_string(instruction.x) + ", V" + to_register_string(instruction.y);
+
+                    case (6):
+                        // SHR Vx {, Vy}
+                        return "SHR V" + to_register_string(instruction.x) + ", V" + to_register_string(instruction.y);
+
+                    case (7):
+                        // SUBN Vx, Vy
+                        return "SUBN V" + to_register_string(instruction.x) + ", V" + to_register_string(instruction.y);
+
+                    case (0xE):
+                        // SHL Vx {, Vy}
+                        return "SHL V" + to_register_string(instruction.x) + ", V" + to_register_string(instruction.y);
+                
+                    default: break;
+                }
+
+            case (9):
+                // SNE Vx, Vy
+                return "SNE V" + to_register_string(instruction.x) + ", V" + to_register_string(instruction.y);
+            
+            case (0xA):
+                // LD I, addr
+                return "LD I, " + to_hex_string(instruction.nnn, 3);
+
+            case (0xB):
+                // JP V0, addr
+                return "JP V0, " + to_hex_string(instruction.nnn, 3);
+
+            case (0xC):
+                // RND Vx, byte
+                return "RND V" + to_register_string(instruction.x) + ", " + to_hex_string(instruction.nn, 2);
+
+            case (0xD):
+                // DRW Vx, Vy, nibble
+                return "DRW V" + to_register_string(instruction.x) + ", V" 
+                    + to_register_string(instruction.y) + ", " + to_hex_string(instruction.raw_opcode, 4);
+
+            case (0xE):
+                if (instruction.n == 0xE) {
+                    // SKP Vx
+                    return "SKP V" + to_register_string(instruction.x);
+                }
+                else if (instruction.n == 0x1) {
+                    // SKNP Vx
+                    return "SKNP V" + to_register_string(instruction.x);
+                }
+
+            case (0xF):
+                switch (instruction.nn) {
+                    
+                }
+
+            [[fallthrough]];
             default:
                 return std::nullopt;
         }
     }
 
+    // used for debugging
     std::string instruction_to_string(const opcode::Instruction& instruction) {
         std::ostringstream oss;
         oss << "f=" << std::setw(3) << static_cast<int>(instruction.f) << " "
@@ -111,6 +189,7 @@ namespace disassembler {
         return oss.str();
     }
 
+    // takes in uint8_t and returns hex friendly string
     std::string to_register_string(uint8_t val) {
         std::ostringstream oss;
         oss << std::hex << static_cast<int>(val);
@@ -119,6 +198,7 @@ namespace disassembler {
         return formatted;
     }
 
+    // takes in uint16_t, and width; returns hex friendly string
     std::string to_hex_string(uint16_t value, int width) {
         std::ostringstream oss;
 
