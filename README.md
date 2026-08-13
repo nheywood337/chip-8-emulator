@@ -9,9 +9,14 @@ cmake --build build
 
 ## To run the program
 
-Run the executable and pass in the path to the ROM you want to load.
+The emulator supports two modes: run (`-r`) and disassemble (`-d`).
 
-Example:
+Run a ROM (WORK IN PROGRESS):
 ```bash
-./build/chip8 roms/<ROM_TO_LOAD>
+./build/chip8 -r roms/<ROM_TO_LOAD>
+```
+
+Disassemble a ROM into a listing:
+```bash
+./build/chip8 -d roms/<ROM_TO_LOAD>
 ```
