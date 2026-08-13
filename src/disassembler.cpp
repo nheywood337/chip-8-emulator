@@ -4,6 +4,7 @@
 #include <sstream>
 #include <iomanip>
 #include <optional>
+#include <stdint.h>
 
 namespace disassembler {
     // converts <uint8_t rom_bytes> to vector<string> ; returns std::nullopt if malformed ROM
