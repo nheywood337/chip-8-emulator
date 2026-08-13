@@ -6,6 +6,7 @@
 #include "rom_loader.h"
 #include "disassembler.h"
 
+
 enum MODE {
     RUN,
     DISASSEMBLE,
@@ -26,37 +27,34 @@ MODE initialize_mode(const std::string& mode) {
 }
 
 int main(int argc, char* argv[]) {
-    if (argc != 2) {
+    if (argc != 3) {
         std::cerr << "ERROR: Invalid execution, ex: ./chip8 -r <PATH_TO_ROM>" << std::endl;
         return EXIT_FAILURE;
     }
     MODE mode = MODE::INIT;
 
-
-    initialize_mode(argv[1]);
+    mode = initialize_mode(argv[1]);
     const std::string ROM_TO_LOAD = argv[2];
 
-    if (MODE::RUN) {
+    if (mode == MODE::RUN) {
         chip8 chip(ROM_TO_LOAD);
-        return 0;
+        if (!chip.load_rom_into_memory()) {
+            return EXIT_FAILURE;
+        }
     }
-    else if (MODE::DISASSEMBLE) {
+    else if (mode == MODE::DISASSEMBLE) {
         auto result = rom_loader::read_rom_bytes(ROM_TO_LOAD);
 
         // guard clause for read
         if (!result) {
-            return false;
+            return EXIT_FAILURE;
         }
         
-        disassembler::disassemble(result->data());
-        return 0;
-    }
+        std::vector<std::string> output = disassembler::disassemble(*result);
 
-    const std::string ROM_TO_LOAD = argv[3];
-    chip8 chip(ROM_TO_LOAD);
-
-    if (!chip.load_rom_into_memory()) {
-        return EXIT_FAILURE;
+        for (const auto& line : output) {
+            std::cout << line << std::endl;
+        }
     }
 
     return 0;

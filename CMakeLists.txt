@@ -10,6 +10,7 @@ add_executable(chip8
     src/main.cpp
     src/chip8.cpp
     src/rom_loader.cpp
+    src/disassembler.cpp
 )
 
 target_include_directories(chip8 PRIVATE include)
