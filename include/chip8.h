@@ -4,7 +4,13 @@
 #include <cstdint>
 #include <array>
 #include <vector>
+#include <stdexcept>
+#include <string>
 
+class chip8_error : public std::runtime_error {
+    public:
+        explicit chip8_error(const std::string& msg) : std::runtime_error(msg) {}
+};
 
 class chip8 {
     public:

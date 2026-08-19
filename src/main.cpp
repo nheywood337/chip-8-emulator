@@ -41,20 +41,22 @@ int main(int argc, char* argv[]) {
     }
 
     const std::string ROM_TO_LOAD = argv[2];
+    auto result = rom_loader::read_rom_bytes(ROM_TO_LOAD);
+    // guard clause for read
+    if (!result) {
+        return EXIT_FAILURE;
+    }
 
     if (mode == MODE::RUN) {
-        chip8 chip(ROM_TO_LOAD);
-        if (!chip.load_rom_into_memory()) {
+        try {
+            chip8 chip(*result);
+            // chip.run(); // Run the emulator loop
+        }
+        catch (const chip8_error& e) {
             return EXIT_FAILURE;
         }
     }
     else if (mode == MODE::DISASSEMBLE) {
-        auto result = rom_loader::read_rom_bytes(ROM_TO_LOAD);
-
-        // guard clause for read
-        if (!result) {
-            return EXIT_FAILURE;
-        }
 
         auto output = disassembler::disassemble(*result);
 
