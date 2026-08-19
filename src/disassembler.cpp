@@ -5,12 +5,12 @@
 #include <iostream>
 #include <sstream>
 #include <iomanip>
-#include <optional>
 #include <stdint.h>
+#include <optional>
 
 
 namespace disassembler {
-    // converts <uint8_t rom_bytes> to vector<string> ; returns std::nullopt if malformed ROM
+    // converts <uint8_t rom_bytes> to vector<string> ; returns nullopt on invalid rom
     std::optional<std::vector<std::string>> disassemble(const std::vector<uint8_t>& rom_bytes) {
         std::vector<std::string> result;
         
@@ -27,8 +27,7 @@ namespace disassembler {
             opcode::Instruction decoded = opcode::decode(combined);
             uint16_t addr = START_ADDRESS_OFFSET + i;
 
-            std::optional<std::string> maybe_mnemonic = mnemonic(decoded);
-            std::string mnemonic_text = maybe_mnemonic.value_or("unknown"); // default to unknown if we dont support opcode
+            std::string mnemonic_text = mnemonic(decoded);
 
             std::string formatted = to_hex_string(addr, 4) + " | " 
                 + to_hex_string(combined, 4) + " | " + mnemonic_text;
@@ -39,10 +38,10 @@ namespace disassembler {
         return result;
     }
 
-    std::optional<std::string> mnemonic(const opcode::Instruction& instruction) {
+    std::string mnemonic(const opcode::Instruction& instruction) {
 
         // ex: [0x00E0]
-        //   f = 0  :   dictates call type
+        //   f = 0  :  dictates call type
         //   x = 0
         //   y = E
         //   n = 0
@@ -50,186 +49,59 @@ namespace disassembler {
         // nnn = 0E0
 
         // OUR TARGET: COSMAC VIP CHIP-8
-        switch (instruction.f) {
+        switch (instruction.opcode) {
+            case opcode::Opcode::CLS:        return "CLS";
+            case opcode::Opcode::RET:        return "RET";
+            case opcode::Opcode::SYS_ADDR:   return "SYS " + to_hex_string(instruction.nnn, 3);
+            case opcode::Opcode::JP_ADDR:    return "JP " + to_hex_string(instruction.nnn, 3);
+            case opcode::Opcode::CALL_ADDR:  return "CALL " + to_hex_string(instruction.nnn, 3);
 
-            // could be 00E0, 00EE, or 0nnn
-            case (0x0):
-                // CLS
-                if (instruction.nn == 0xE0) return "CLS";
+            // SE / SNE
+            case opcode::Opcode::SE_V_B:     return "SE V" + to_register_string(instruction.x) + ", " + to_hex_string(instruction.nn, 2);
+            case opcode::Opcode::SNE_V_B:    return "SNE V" + to_register_string(instruction.x) + ", " + to_hex_string(instruction.nn, 2);
+            case opcode::Opcode::SE_V_V:     return "SE V" + to_register_string(instruction.x) + ", V" + to_register_string(instruction.y);
+            case opcode::Opcode::SNE_V_V:    return "SNE V" + to_register_string(instruction.x) + ", V" + to_register_string(instruction.y);
 
-                // RET
-                else if (instruction.nn == 0xEE) return "RET";
+            // LD / ADD immediates
+            case opcode::Opcode::LD_V_B:     return "LD V" + to_register_string(instruction.x) + ", " + to_hex_string(instruction.nn, 2);
+            case opcode::Opcode::ADD_V_B:    return "ADD V" + to_register_string(instruction.x) + ", " + to_hex_string(instruction.nn, 2);
 
-                // SYS addr
-                else {
-                    return "SYS " + to_hex_string(instruction.nnn, 3);
-                }
+            // 0x8 ALU operations
+            case opcode::Opcode::LD_V_V:     return "LD V" + to_register_string(instruction.x) + ", V" + to_register_string(instruction.y);
+            case opcode::Opcode::OR_V_V:     return "OR V" + to_register_string(instruction.x) + ", V" + to_register_string(instruction.y);
+            case opcode::Opcode::AND_V_V:    return "AND V" + to_register_string(instruction.x) + ", V" + to_register_string(instruction.y);
+            case opcode::Opcode::XOR_V_V:    return "XOR V" + to_register_string(instruction.x) + ", V" + to_register_string(instruction.y);
+            case opcode::Opcode::ADD_V_V:    return "ADD V" + to_register_string(instruction.x) + ", V" + to_register_string(instruction.y);
+            case opcode::Opcode::SUB_V_V:    return "SUB V" + to_register_string(instruction.x) + ", V" + to_register_string(instruction.y);
+            case opcode::Opcode::SHR_V:      return "SHR V" + to_register_string(instruction.x) + ", V" + to_register_string(instruction.y);
+            case opcode::Opcode::SUBN_V_V:   return "SUBN V" + to_register_string(instruction.x) + ", V" + to_register_string(instruction.y);
+            case opcode::Opcode::SHL_V:      return "SHL V" + to_register_string(instruction.x) + ", V" + to_register_string(instruction.y);
 
-            case (0x1):
-                // JP addr
-                return "JP " + to_hex_string(instruction.nnn, 3);
+            // Flow / Random / Graphics
+            case opcode::Opcode::LD_I_ADDR:  return "LD I, " + to_hex_string(instruction.nnn, 3);
+            case opcode::Opcode::JP_V_ADDR:  return "JP V0, " + to_hex_string(instruction.nnn, 3);
+            case opcode::Opcode::RND_V_B:    return "RND V" + to_register_string(instruction.x) + ", " + to_hex_string(instruction.nn, 2);
+            case opcode::Opcode::DRW_V_V:    return "DRW V" + to_register_string(instruction.x) + ", V" + to_register_string(instruction.y) + ", " + to_hex_string(instruction.n, 1);
 
-            case (0x2):
-                // CALL addr
-                return "CALL " + to_hex_string(instruction.nnn, 3);
+            // Key inputs
+            case opcode::Opcode::SKP_V:      return "SKP V" + to_register_string(instruction.x);
+            case opcode::Opcode::SKNP_V:     return "SKNP V" + to_register_string(instruction.x);
 
-            case (0x3):
-                // SE Vx, byte
-                return "SE V" + to_register_string(instruction.x) + ", " 
-                    + to_hex_string(instruction.nn, 2);
-            
-            case (0x4):
-                // SNE Vx, byte
-                return "SNE V" + to_register_string(instruction.x) 
-                    + ", " + to_hex_string(instruction.nn, 2);
-            
-            case (0x5):
-                // SE Vx, Vy
-                return "SE V" + to_register_string(instruction.x) 
-                    + ", V" + to_register_string(instruction.y);
+            // 0xF Timer / Memory operations
+            case opcode::Opcode::LD_V_DT:    return "LD V" + to_register_string(instruction.x) + ", DT";
+            case opcode::Opcode::LD_V_K:     return "LD V" + to_register_string(instruction.x) + ", K";
+            case opcode::Opcode::LD_DT_V:    return "LD DT, V" + to_register_string(instruction.x);
+            case opcode::Opcode::LD_ST_V:    return "LD ST, V" + to_register_string(instruction.x);
+            case opcode::Opcode::ADD_I_V:    return "ADD I, V" + to_register_string(instruction.x);
+            case opcode::Opcode::LD_F_V:     return "LD F, V" + to_register_string(instruction.x);
+            case opcode::Opcode::LD_B_V:     return "LD B, V" + to_register_string(instruction.x);
+            case opcode::Opcode::LD_I_V:     return "LD [I], V" + to_register_string(instruction.x);
+            case opcode::Opcode::LD_V_I:     return "LD V" + to_register_string(instruction.x) + ", [I]";
 
-            case (0x6):
-                // LD Vx, byte
-                return "LD V" + to_register_string(instruction.x) 
-                    + ", " + to_hex_string(instruction.nn, 2);
-            
-            case (0x7):
-                // 	ADD Vx, byte
-                return "ADD V" + to_register_string(instruction.x) 
-                    + ", " + to_hex_string(instruction.nn, 2);
-
-            // could be 8xy0, 8xy1, 8xy2, 8xy3, 8xy4, 8xy5, 8xy6
-            case (0x8):
-                switch (instruction.n) {
-                    case (0):
-                        // LD Vx, Vy
-                        return "LD V" + to_register_string(instruction.x) 
-                            + ", V" + to_register_string(instruction.y);
-                    
-                    case (1):
-                        // OR Vx, Vy <COSMAC based variants will reset VF>
-                        return "OR V" + to_register_string(instruction.x) 
-                            + ", V" + to_register_string(instruction.y);
-                
-                    case (2):
-                        // AND Vx, Vy <COSMAC based variants will reset VF>
-                        return "AND V" + to_register_string(instruction.x) 
-                            + ", V" + to_register_string(instruction.y);
-                
-                    case (3):
-                        // XOR Vx, Vy <COSMAC based variants will reset VF>
-                        return "XOR V" + to_register_string(instruction.x) 
-                            + ", V" + to_register_string(instruction.y);
-
-                    case (4):
-                        // ADD Vx, Vy
-                        return "ADD V" + to_register_string(instruction.x) 
-                            + ", V" + to_register_string(instruction.y);
-
-                    case (5):
-                        // SUB Vx, Vy
-                        return "SUB V" + to_register_string(instruction.x) 
-                            + ", V" + to_register_string(instruction.y);
-
-                    case (6):
-                        // SHR Vx {, Vy}
-                        return "SHR V" + to_register_string(instruction.x) 
-                            + ", V" + to_register_string(instruction.y);
-
-                    case (7):
-                        // SUBN Vx, Vy
-                        return "SUBN V" + to_register_string(instruction.x) 
-                            + ", V" + to_register_string(instruction.y);
-
-                    case (0xE):
-                        // SHL Vx {, Vy}
-                        return "SHL V" + to_register_string(instruction.x) 
-                            + ", V" + to_register_string(instruction.y);
-                
-                    default: return std::nullopt;
-                }
-
-            case (9):
-                // SNE Vx, Vy
-                return "SNE V" + to_register_string(instruction.x) 
-                    + ", V" + to_register_string(instruction.y);
-            
-            case (0xA):
-                // LD I, addr
-                return "LD I, " + to_hex_string(instruction.nnn, 3);
-
-            case (0xB):
-                // JP V0, addr
-                return "JP V0, " + to_hex_string(instruction.nnn, 3);
-
-            case (0xC):
-                // RND Vx, byte
-                return "RND V" + to_register_string(instruction.x) 
-                    + ", " + to_hex_string(instruction.nn, 2);
-
-            case (0xD):
-                // DRW Vx, Vy, nibble
-                return "DRW V" + to_register_string(instruction.x) + ", V" 
-                    + to_register_string(instruction.y) + ", " + to_hex_string(instruction.n, 1);
-
-            case (0xE):
-                if (instruction.n == 0xE) {
-                    // SKP Vx
-                    return "SKP V" + to_register_string(instruction.x);
-                }
-                else if (instruction.n == 0x1) {
-                    // SKNP Vx
-                    return "SKNP V" + to_register_string(instruction.x);
-                }
-                else {
-                    return std::nullopt;
-                }
-
-            case (0xF):
-                switch (instruction.nn) {
-                    case (0x07):
-                        // LD Vx, DT
-                        return "LD V" + to_register_string(instruction.x) + ", DT";
-
-                    case (0x0A):
-                        // LD Vx, K
-                        return "LD V" + to_register_string(instruction.x) + ", K";
-
-                    case (0x15):
-                        // LD DT, Vx
-                        return "LD DT, V" + to_register_string(instruction.x);
-
-                    case (0x18):
-                        // LD ST, Vx
-                        return "LD ST, V" + to_register_string(instruction.x);
-
-                    case (0x1E):
-                        // ADD I, Vx
-                        return "ADD I, V" + to_register_string(instruction.x);
-
-                    case (0x29):
-                        // LD F, Vx
-                        return "LD F, V" + to_register_string(instruction.x);
-
-                    case (0x33):
-                        // LD B, Vx
-                        return "LD B, V" + to_register_string(instruction.x);
-
-                    case (0x55):
-                        // LD [I], Vx
-                        return "LD [I], V" + to_register_string(instruction.x);
-
-                    case (0x65):
-                        // LD Vx, [I]
-                        return "LD V" + to_register_string(instruction.x) + ", [I]";
-
-                    default: return std::nullopt;
-                }
-
-            [[fallthrough]];
-            default:
-                return std::nullopt;
+            // invalid
+            case opcode::Opcode::INVALID: return "???";
         }
+        return "???";
     }
 
     // used for debugging
@@ -247,7 +119,7 @@ namespace disassembler {
     // takes in uint8_t and returns hex friendly string
     std::string to_register_string(uint8_t val) {
         std::ostringstream oss;
-        oss << std::hex << static_cast<int>(val);
+        oss << std::uppercase << std::hex << static_cast<int>(val);
         std::string formatted = oss.str();
 
         return formatted;
@@ -257,7 +129,7 @@ namespace disassembler {
     std::string to_hex_string(uint16_t value, int width) {
         std::ostringstream oss;
 
-        oss << std::hex << std::setw(width) << std::setfill('0') << value;
+        oss << std::uppercase << std::hex << std::setw(width) << std::setfill('0') << value;
         std::string formatted = oss.str();
 
         return formatted;
