@@ -53,6 +53,7 @@ int main(int argc, char* argv[]) {
             // chip.run(); // Run the emulator loop
         }
         catch (const chip8_error& e) {
+            std::cerr << e.what() << std::endl;
             return EXIT_FAILURE;
         }
     }

@@ -1,5 +1,4 @@
 #include "chip8.h"
-#include "rom_loader.h"
 #include <fstream>
 #include <iostream>
 #include <algorithm>
