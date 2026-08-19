@@ -65,7 +65,13 @@ INSTANTIATE_TEST_SUITE_P(
         MnemonicCase{0xF629, "LD F, V6"},
         MnemonicCase{0xF733, "LD B, V7"},
         MnemonicCase{0xF855, "LD [I], V8"},
-        MnemonicCase{0xF965, "LD V9, [I]"}
+        MnemonicCase{0xF965, "LD V9, [I]"},
+
+        // Invalid codes
+        MnemonicCase{0x5121, "???"},
+        MnemonicCase{0x9121, "???"},
+        MnemonicCase{0xE01E, "???"},
+        MnemonicCase{0x8018, "???"}
     )
 );
 

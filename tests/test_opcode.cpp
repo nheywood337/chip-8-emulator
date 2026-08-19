@@ -2,69 +2,74 @@
 
 #include "opcode.h"
 
-struct MnemonicCase {
+struct OpcodeCase {
     uint16_t raw_opcode;
-    std::string expected;
+    opcode::Opcode expected;
 };
 
-class MnemonicParamTest : public ::testing::TestWithParam<MnemonicCase> {};
+class OpcodeParamTest : public ::testing::TestWithParam<OpcodeCase> {};
 
-TEST_P(MnemonicParamTest, ProducesExpectedMnemonic) {
+TEST_P(OpcodeParamTest, ProducesExpectedOpcode) {
     auto instruction = opcode::decode(GetParam().raw_opcode);
-    EXPECT_EQ(opcode::decode, GetParam().expected);
+    EXPECT_EQ(instruction.opcode, GetParam().expected);
 }
 
-// TODO FIX
 INSTANTIATE_TEST_SUITE_P(
-    AllOpcodes,
-    MnemonicParamTest,
+    AllOpcodeEnums,
+    OpcodeParamTest,
     ::testing::Values(
         // System / Jump
-        MnemonicCase{0x00E0, opcode::Opcode::CLS},
-        MnemonicCase{0x00EE, "RET"},
-        MnemonicCase{0x0123, "SYS 123"},
-        MnemonicCase{0x1234, "JP 234"},
-        MnemonicCase{0x2ABC, "CALL ABC"},
+        OpcodeCase{0x00E0, opcode::Opcode::CLS},
+        OpcodeCase{0x00EE, opcode::Opcode::RET},
+        OpcodeCase{0x0123, opcode::Opcode::SYS_ADDR},
+        OpcodeCase{0x1234, opcode::Opcode::JP_ADDR},
+        OpcodeCase{0x2ABC, opcode::Opcode::CALL_ADDR},
 
         // Skip / Load / Add Immediates
-        MnemonicCase{0x31AB, "SE V1, AB"},
-        MnemonicCase{0x42CD, "SNE V2, CD"},
-        MnemonicCase{0x5340, "SE V3, V4"},
-        MnemonicCase{0x6567, "LD V5, 67"},
-        MnemonicCase{0x7889, "ADD V8, 89"},
- 
+        OpcodeCase{0x31AB, opcode::Opcode::SE_V_B},
+        OpcodeCase{0x42CD, opcode::Opcode::SNE_V_B},
+        OpcodeCase{0x5340, opcode::Opcode::SE_V_V},
+        OpcodeCase{0x6567, opcode::Opcode::LD_V_B},
+        OpcodeCase{0x7889, opcode::Opcode::ADD_V_B},
+
         // 0x8 ALU Operations
-        MnemonicCase{0x8010, "LD V0, V1"},
-        MnemonicCase{0x8231, "OR V2, V3"},
-        MnemonicCase{0x8452, "AND V4, V5"},
-        MnemonicCase{0x8673, "XOR V6, V7"},
-        MnemonicCase{0x8894, "ADD V8, V9"},
-        MnemonicCase{0x8AB5, "SUB VA, VB"},
-        MnemonicCase{0x8CD6, "SHR VC, VD"},
-        MnemonicCase{0x8EF7, "SUBN VE, VF"},
-        MnemonicCase{0x801E, "SHL V0, V1"},
+        OpcodeCase{0x8010, opcode::Opcode::LD_V_V},
+        OpcodeCase{0x8231, opcode::Opcode::OR_V_V},
+        OpcodeCase{0x8452, opcode::Opcode::AND_V_V},
+        OpcodeCase{0x8673, opcode::Opcode::XOR_V_V},
+        OpcodeCase{0x8894, opcode::Opcode::ADD_V_V},
+        OpcodeCase{0x8AB5, opcode::Opcode::SUB_V_V},
+        OpcodeCase{0x8CD6, opcode::Opcode::SHR_V},
+        OpcodeCase{0x8EF7, opcode::Opcode::SUBN_V_V},
+        OpcodeCase{0x801E, opcode::Opcode::SHL_V},
 
         // Skip Registers / Jump V0 / Random / Draw
-        MnemonicCase{0x9120, "SNE V1, V2"},
-        MnemonicCase{0xA123, "LD I, 123"},
-        MnemonicCase{0xB456, "JP V0, 456"},
-        MnemonicCase{0xC122, "RND V1, 22"},
-        MnemonicCase{0xD125, "DRW V1, V2, 5"},
+        OpcodeCase{0x9120, opcode::Opcode::SNE_V_V},
+        OpcodeCase{0xA123, opcode::Opcode::LD_I_ADDR},
+        OpcodeCase{0xB456, opcode::Opcode::JP_V_ADDR},
+        OpcodeCase{0xC122, opcode::Opcode::RND_V_B},
+        OpcodeCase{0xD125, opcode::Opcode::DRW_V_V},
 
         // Keyboard Skips
-        MnemonicCase{0xE19E, "SKP V1"},
-        MnemonicCase{0xE2A1, "SKNP V2"},
+        OpcodeCase{0xE19E, opcode::Opcode::SKP_V},
+        OpcodeCase{0xE2A1, opcode::Opcode::SKNP_V},
 
         // 0xF Timers / Memory
-        MnemonicCase{0xF107, "LD V1, DT"},
-        MnemonicCase{0xF20A, "LD V2, K"},
-        MnemonicCase{0xF315, "LD DT, V3"},
-        MnemonicCase{0xF418, "LD ST, V4"},
-        MnemonicCase{0xF51E, "ADD I, V5"},
-        MnemonicCase{0xF629, "LD F, V6"},
-        MnemonicCase{0xF733, "LD B, V7"},
-        MnemonicCase{0xF855, "LD [I], V8"},
-        MnemonicCase{0xF965, "LD V9, [I]"}
+        OpcodeCase{0xF107, opcode::Opcode::LD_V_DT},
+        OpcodeCase{0xF20A, opcode::Opcode::LD_V_K},
+        OpcodeCase{0xF315, opcode::Opcode::LD_DT_V},
+        OpcodeCase{0xF418, opcode::Opcode::LD_ST_V},
+        OpcodeCase{0xF51E, opcode::Opcode::ADD_I_V},
+        OpcodeCase{0xF629, opcode::Opcode::LD_F_V},
+        OpcodeCase{0xF733, opcode::Opcode::LD_B_V},
+        OpcodeCase{0xF855, opcode::Opcode::LD_I_V},
+        OpcodeCase{0xF965, opcode::Opcode::LD_V_I},
+
+        // Invalid codes
+        OpcodeCase{0x5121, opcode::Opcode::INVALID},
+        OpcodeCase{0x9121, opcode::Opcode::INVALID},
+        OpcodeCase{0xE01E, opcode::Opcode::INVALID},
+        OpcodeCase{0x8018, opcode::Opcode::INVALID}
     )
 );
 
