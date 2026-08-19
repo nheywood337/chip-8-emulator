@@ -119,7 +119,7 @@ namespace disassembler {
     // takes in uint8_t and returns hex friendly string
     std::string to_register_string(uint8_t val) {
         std::ostringstream oss;
-        oss << std::hex << static_cast<int>(val);
+        oss << std::uppercase << std::hex << static_cast<int>(val);
         std::string formatted = oss.str();
 
         return formatted;
@@ -129,7 +129,7 @@ namespace disassembler {
     std::string to_hex_string(uint16_t value, int width) {
         std::ostringstream oss;
 
-        oss << std::hex << std::setw(width) << std::setfill('0') << value;
+        oss << std::uppercase << std::hex << std::setw(width) << std::setfill('0') << value;
         std::string formatted = oss.str();
 
         return formatted;
