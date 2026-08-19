@@ -92,6 +92,6 @@ TEST(DisassembleTest, TwoInstructionRomProducesTwoCorrectlyAddressedLines) {
     ASSERT_TRUE(result.has_value());
     ASSERT_EQ(result->size(), 2u);
 
-    EXPECT_EQ((*result)[0], "0200 | 00e0 | CLS");
+    EXPECT_EQ((*result)[0], "0200 | 00E0 | CLS");
     EXPECT_EQ((*result)[1], "0202 | 1234 | JP 234");
 }
