@@ -12,12 +12,16 @@ namespace rom_loader {
 
         // check for extension
         size_t idx = rom_path.rfind('.');
+        if (idx == std::string::npos) {
+            std::cerr << "[rom_loader] ERROR: Invalid file extension" << std::endl;
+            return std::nullopt;
+        }
         std::string fileExt = rom_path.substr(idx);
+
         if (fileExt != ".ch8") {
             std::cerr << "[rom_loader] ERROR: " << fileExt << " is not a valid chip8 ROM!" << std::endl;
             return std::nullopt;
         }
-
 
         // check if ROM can open successfully 
         if (!rom.is_open()) {
