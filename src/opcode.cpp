@@ -114,7 +114,6 @@ namespace opcode {
                     case 0x33: instruction.opcode = opcode::Opcode::LD_B_V; break;
                     case 0x55: instruction.opcode = opcode::Opcode::LD_I_V; break;
                     case 0x65: instruction.opcode = opcode::Opcode::LD_V_I; break;
-                    break;
                 }
                 break;
         }

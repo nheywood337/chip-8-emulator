@@ -5,19 +5,17 @@
 #include <iostream>
 #include <sstream>
 #include <iomanip>
-#include <optional>
 #include <stdint.h>
 
 
 namespace disassembler {
-    // converts <uint8_t rom_bytes> to vector<string> ; returns std::nullopt if malformed ROM
-    std::optional<std::vector<std::string>> disassemble(const std::vector<uint8_t>& rom_bytes) {
+    // converts <uint8_t rom_bytes> to vector<string>
+    std::vector<std::string> disassemble(const std::vector<uint8_t>& rom_bytes) {
         std::vector<std::string> result;
         
         for (size_t i = 0; i < rom_bytes.size(); i+=2) {
             if (i+1 >= rom_bytes.size()) {
                 std::cerr << "[disassembler]: Malformed ROM Detected!" << std::endl;
-                return std::nullopt;
             }
 
             uint8_t byte_hi = rom_bytes[i];
@@ -27,8 +25,7 @@ namespace disassembler {
             opcode::Instruction decoded = opcode::decode(combined);
             uint16_t addr = START_ADDRESS_OFFSET + i;
 
-            std::optional<std::string> maybe_mnemonic = mnemonic(decoded);
-            std::string mnemonic_text = maybe_mnemonic.value_or("unknown"); // default to unknown if we dont support opcode
+            std::string mnemonic_text = mnemonic(decoded);
 
             std::string formatted = to_hex_string(addr, 4) + " | " 
                 + to_hex_string(combined, 4) + " | " + mnemonic_text;
