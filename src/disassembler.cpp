@@ -6,16 +6,18 @@
 #include <sstream>
 #include <iomanip>
 #include <stdint.h>
+#include <optional>
 
 
 namespace disassembler {
-    // converts <uint8_t rom_bytes> to vector<string>
-    std::vector<std::string> disassemble(const std::vector<uint8_t>& rom_bytes) {
+    // converts <uint8_t rom_bytes> to vector<string> ; returns nullopt on invalid rom
+    std::optional<std::vector<std::string>> disassemble(const std::vector<uint8_t>& rom_bytes) {
         std::vector<std::string> result;
         
         for (size_t i = 0; i < rom_bytes.size(); i+=2) {
             if (i+1 >= rom_bytes.size()) {
                 std::cerr << "[disassembler]: Malformed ROM Detected!" << std::endl;
+                return std::nullopt;
             }
 
             uint8_t byte_hi = rom_bytes[i];
