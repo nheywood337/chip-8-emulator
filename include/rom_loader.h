@@ -6,4 +6,9 @@
 #include <cstdint>
 #include <optional>
 
-std::optional<std::vector<uint8_t>> read_rom_bytes(const std::string& file_path);
+
+namespace rom_loader {
+    
+    // reads file from a given rom path, returns nullopt if invalid, otherwise returns a vector<uint8_t>
+    std::optional<std::vector<uint8_t>> read_rom_bytes(const std::string& file_path);
+}
