@@ -4,17 +4,6 @@
 
 namespace opcode {
 
-    struct Instruction
-    {
-        uint8_t n = 0;
-        uint8_t y = 0;
-        uint8_t x = 0;
-        uint8_t f = 0;
-        uint8_t nn = 0;
-        uint16_t nnn = 0;
-        uint16_t raw_opcode = 0;
-    };
-
     enum class Opcode {
         CLS,            // [00E0] clear the screen
         RET,            // [00EE] returns from subroutine to address pulled from stack
@@ -52,6 +41,18 @@ namespace opcode {
         LD_I_V,         // [Fx55] write registers v0..vX to memory starting at I 
         LD_V_I,         // [Fx65] read memory starting at I into registers v0..vX
         INVALID         // opcode didn't match any known pattern
+    };
+
+    struct Instruction
+    {
+        uint8_t n = 0;
+        uint8_t y = 0;
+        uint8_t x = 0;
+        uint8_t f = 0;
+        uint8_t nn = 0;
+        uint16_t nnn = 0;
+        uint16_t raw_opcode = 0;
+        Opcode opcode = Opcode::INVALID;
     };
 
     Instruction decode(uint16_t raw_opcode);
