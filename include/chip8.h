@@ -33,7 +33,7 @@ class chip8 {
         // ----- execution functions -----
 
         // [00EE] returns from subroutine to address pulled from stack
-        void execute_ret(const opcode::Instruction& instruction);
+        void execute_ret();
 
         // [1nnn] jump to address NNN
         void execute_jp_addr(const opcode::Instruction& instruction);

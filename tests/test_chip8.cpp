@@ -89,3 +89,39 @@ TEST_F(Chip8Test, ExecuteADD_V_B) {
     // 0xFF + 0x05 = 0x104 -> rollover to 0x04 in uint8_t
     EXPECT_EQ(vm.get_register(0x2), 0x04);
 }
+
+// [00EE] returns from subroutine to address pulled from stack
+TEST_F(Chip8Test, ExecuteRET) {
+    // 1. 0x2204 -> CALL 0x204 (Subroutine at address 0x204)
+    // 2. 0x00EE -> RET (Subroutine body, returns back)
+    std::vector<uint8_t> rom = {
+        0x22, 0x04, // 0x200: CALL 0x204
+        0x00, 0x00, // 0x202: Padding / NOP
+        0x00, 0xEE  // 0x204: RET
+    };
+    chip8 vm(rom);
+
+    // Call subroutine (PC moves from 0x200 -> 0x202 on fetch, pushes 0x202 to stack, sets PC to 0x204)
+    opcode::Instruction call_instr = opcode::decode(vm.fetch());
+    vm.execute(call_instr);
+    EXPECT_EQ(vm.get_program_counter(), 0x204);
+
+    // Fetch and execute RET from 0x204
+    opcode::Instruction ret_instr = opcode::decode(vm.fetch());
+    vm.execute(ret_instr);
+
+    // PC should be restored to 0x202 (address right after original CALL)
+    EXPECT_EQ(vm.get_program_counter(), 0x202);
+}
+
+// [2nnn] push return address onto stack and call subroutine at address NNN
+TEST_F(Chip8Test, ExecuteCALL_ADDR) {
+    std::vector<uint8_t> rom = {0x23, 0x45}; // CALL 0x345
+    chip8 vm(rom);
+
+    opcode::Instruction instr = opcode::decode(vm.fetch());
+    vm.execute(instr);
+
+    // PC should now point to target address 0x345
+    EXPECT_EQ(vm.get_program_counter(), 0x345);
+}

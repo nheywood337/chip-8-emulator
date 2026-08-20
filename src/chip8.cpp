@@ -33,7 +33,7 @@ uint16_t chip8::fetch() {
 // Main execution dispatcher
 void chip8::execute(const opcode::Instruction& instruction) {
     switch (instruction.opcode) {
-        case opcode::Opcode::RET: execute_ret(instruction); break;
+        case opcode::Opcode::RET: execute_ret(); break;
         case opcode::Opcode::JP_ADDR: execute_jp_addr(instruction); break;
         case opcode::Opcode::CALL_ADDR: execute_call_addr(instruction); break;
         case opcode::Opcode::LD_V_B: execute_ld_v_b(instruction); break;
@@ -46,7 +46,7 @@ void chip8::execute(const opcode::Instruction& instruction) {
 // ----- Executors -----
 
 // [00EE] returns from subroutine to address pulled from stack
-void chip8::execute_ret(const opcode::Instruction& instruction) {
+void chip8::execute_ret() {
     if (this->stack_pointer == 0) throw chip8_error("[chip8]: execute_ret - stack underflow!");
 
     this->stack_pointer--; 
