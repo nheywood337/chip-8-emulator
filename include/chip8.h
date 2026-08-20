@@ -27,11 +27,19 @@ class chip8 {
         std::array<uint8_t, MEMORY_SIZE> memory = {};       // fixed memory size 4096
         uint16_t program_counter = START_ADDRESS_OFFSET;    // PC
         std::array<uint8_t, 16> v_registers = {};           // Vx
+        std::array<uint16_t, 16> stack = {};                // stack
+        uint8_t stack_pointer = 0;                          // pointer to next free slot on stack
 
         // ----- execution functions -----
 
+        // [00EE] returns from subroutine to address pulled from stack
+        void execute_ret(const opcode::Instruction& instruction);
+
         // [1nnn] jump to address NNN
         void execute_jp_addr(const opcode::Instruction& instruction);
+
+        // [2nnn] push return address onto stack and call subroutine at address NNN
+        void execute_call_addr(const opcode::Instruction& instruction);
 
         // [6xnn] set vX to NN
         void execute_ld_v_b(const opcode::Instruction& instruction);

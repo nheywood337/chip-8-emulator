@@ -33,7 +33,9 @@ uint16_t chip8::fetch() {
 // Main execution dispatcher
 void chip8::execute(const opcode::Instruction& instruction) {
     switch (instruction.opcode) {
+        case opcode::Opcode::RET: execute_ret(instruction); break;
         case opcode::Opcode::JP_ADDR: execute_jp_addr(instruction); break;
+        case opcode::Opcode::CALL_ADDR: execute_call_addr(instruction); break;
         case opcode::Opcode::LD_V_B: execute_ld_v_b(instruction); break;
         case opcode::Opcode::ADD_V_B: execute_add_v_b(instruction); break;
 
@@ -43,19 +45,36 @@ void chip8::execute(const opcode::Instruction& instruction) {
 
 // ----- Executors -----
 
+// [00EE] returns from subroutine to address pulled from stack
+void chip8::execute_ret(const opcode::Instruction& instruction) {
+    if (this->stack_pointer == 0) throw chip8_error("[chip8]: execute_ret - stack underflow!");
+
+    this->stack_pointer--; 
+    this->program_counter = this->stack.at(this->stack_pointer);
+}
+
 // [1nnn] jump to address NNN
 void chip8::execute_jp_addr(const opcode::Instruction& instruction) {
     this->program_counter = instruction.nnn;
 }
 
+// [2nnn] push return address onto stack and call subroutine at address NNN
+void chip8::execute_call_addr(const opcode::Instruction& instruction) {
+    if (this->stack_pointer >= 16) throw chip8_error("[chip8]: execute_call_addr - stack pointer out of bounds!");
+
+    this->stack.at(this->stack_pointer) = this->program_counter; // Save return address
+    this->stack_pointer++;
+    this->program_counter = instruction.nnn;       // Jump to NNN
+}
+
 // [6xnn] set vX to NN
 void chip8::execute_ld_v_b(const opcode::Instruction& instruction) {
-    this->v_registers[instruction.x] = instruction.nn;
+    this->v_registers.at(instruction.x) = instruction.nn;
 }
 
 // [7xnn] add NN to vX
 void chip8::execute_add_v_b(const opcode::Instruction& instruction) {
-    this->v_registers[instruction.x] += instruction.nn;
+    this->v_registers.at(instruction.x) += instruction.nn;
 }
 
 // ----- Helpers for tests -----
