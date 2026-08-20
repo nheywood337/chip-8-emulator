@@ -62,11 +62,19 @@ TEST_F(Chip8Test, ExecuteLD_V_B) {
 
 // [7xnn] add NN to vX
 TEST_F(Chip8Test, ExecuteADD_V_B) {
-    std::vector<uint8_t> rom = {0x72, 0x22};
+    // 0x62FF -> V2 = 0xFF (255)
+    // 0x7205 -> V2 += 0x05 (Rollover to 0x04)
+    std::vector<uint8_t> rom = {0x62, 0xFF, 0x72, 0x05};
     chip8 vm(rom);
 
+    // Load V2 with 0xFF
     opcode::Instruction instr = opcode::decode(vm.fetch());
     vm.execute(instr);
 
-    EXPECT_EQ(vm.get_register(instr.x), instr.nn);
+    // Fetch and execute 7xnn
+    instr = opcode::decode(vm.fetch());
+    vm.execute(instr);
+
+    // 0xFF + 0x05 = 0x104 -> rollover to 0x04 in uint8_t
+    EXPECT_EQ(vm.get_register(0x2), 0x04);
 }
