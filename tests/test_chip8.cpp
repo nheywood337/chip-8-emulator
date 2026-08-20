@@ -53,5 +53,8 @@ TEST_F(Chip8Test, ExecuteLD_V_B) {
     std::vector<uint8_t> rom = {0x62, 0x05};
     chip8 vm(rom);
 
-    EXPECT_EQ(vm.execute(opcode::decode(vm.fetch())), );
+    opcode::Instruction instr = opcode::decode(vm.fetch());
+    vm.execute(instr);
+
+    EXPECT_EQ(vm.get_register(instr.x), instr.nn);
 }

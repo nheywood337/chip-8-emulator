@@ -43,3 +43,16 @@ void chip8::execute(const opcode::Instruction& instruction) {
 void chip8::execute_ld_v_b(const opcode::Instruction& instruction) {
     this->v_registers[instruction.x] = instruction.nn;
 }
+
+uint16_t chip8::get_program_counter() const {
+    return this->program_counter;
+}
+
+uint8_t chip8::get_register(uint8_t index) const {
+    try {
+        return this->v_registers.at(index);
+    }
+    catch (const std::out_of_range& e) {
+        throw chip8_error(std::string("[chip8]: register out of bounds: ") + e.what());
+    }
+}
