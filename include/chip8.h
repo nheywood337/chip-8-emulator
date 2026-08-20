@@ -30,6 +30,9 @@ class chip8 {
 
         // ----- execution functions -----
 
+        // [1nnn] jump to address NNN
+        void execute_jp_addr(const opcode::Instruction& instruction);
+
         // [6xnn] set vX to NN
         void execute_ld_v_b(const opcode::Instruction& instruction);
 

@@ -49,6 +49,17 @@ TEST_F(Chip8Test, FetchThrowsWhenBothBytesAreOutOfBounds) {
     EXPECT_THROW(vm.fetch(), chip8_error);
 }
 
+// [1nnn] jump to address NNN
+TEST_F(Chip8Test, ExecuteJMP_ADDR) {
+    std::vector<uint8_t> rom = {0x11, 0x11};
+    chip8 vm(rom);
+
+    opcode::Instruction instr = opcode::decode(vm.fetch());
+    vm.execute(instr);
+
+    EXPECT_EQ(vm.get_program_counter(), 0x111);
+}
+
 // [6xnn] set vX to NN
 TEST_F(Chip8Test, ExecuteLD_V_B) {
     std::vector<uint8_t> rom = {0x62, 0x05};

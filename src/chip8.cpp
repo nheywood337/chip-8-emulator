@@ -33,6 +33,7 @@ uint16_t chip8::fetch() {
 // Main execution dispatcher
 void chip8::execute(const opcode::Instruction& instruction) {
     switch (instruction.opcode) {
+        case opcode::Opcode::JP_ADDR: execute_jp_addr(instruction); break;
         case opcode::Opcode::LD_V_B: execute_ld_v_b(instruction); break;
         case opcode::Opcode::ADD_V_B: execute_add_v_b(instruction); break;
 
@@ -41,6 +42,11 @@ void chip8::execute(const opcode::Instruction& instruction) {
 }
 
 // ----- Executors -----
+
+// [1nnn] jump to address NNN
+void chip8::execute_jp_addr(const opcode::Instruction& instruction) {
+    this->program_counter = instruction.nnn;
+}
 
 // [6xnn] set vX to NN
 void chip8::execute_ld_v_b(const opcode::Instruction& instruction) {
