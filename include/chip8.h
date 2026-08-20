@@ -14,8 +14,11 @@ class chip8_error : public std::runtime_error {
 
 class chip8 {
     public:
-        chip8(const std::vector<uint8_t>& byte_stream);
+        explicit chip8(const std::vector<uint8_t>& byte_stream);
+        uint16_t fetch();
+        uint16_t get_program_counter() const;
 
     private:
-        std::array<uint8_t, MEMORY_SIZE> memory = {}; // fixed memory size 4096
+        std::array<uint8_t, MEMORY_SIZE> memory = {};       // fixed memory size 4096
+        uint16_t program_counter = START_ADDRESS_OFFSET;
 };
