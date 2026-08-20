@@ -49,8 +49,20 @@ TEST_F(Chip8Test, FetchThrowsWhenBothBytesAreOutOfBounds) {
     EXPECT_THROW(vm.fetch(), chip8_error);
 }
 
+// [6xnn] set vX to NN
 TEST_F(Chip8Test, ExecuteLD_V_B) {
     std::vector<uint8_t> rom = {0x62, 0x05};
+    chip8 vm(rom);
+
+    opcode::Instruction instr = opcode::decode(vm.fetch());
+    vm.execute(instr);
+
+    EXPECT_EQ(vm.get_register(instr.x), instr.nn);
+}
+
+// [7xnn] add NN to vX
+TEST_F(Chip8Test, ExecuteADD_V_B) {
+    std::vector<uint8_t> rom = {0x72, 0x22};
     chip8 vm(rom);
 
     opcode::Instruction instr = opcode::decode(vm.fetch());

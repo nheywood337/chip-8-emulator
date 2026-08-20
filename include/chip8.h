@@ -32,4 +32,7 @@ class chip8 {
 
         // [6xnn] set vX to NN
         void execute_ld_v_b(const opcode::Instruction& instruction);
+
+        // [7xnn] add NN to vX
+        void execute_add_v_b(const opcode::Instruction& instruction);
 };

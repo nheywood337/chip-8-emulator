@@ -34,16 +34,25 @@ uint16_t chip8::fetch() {
 void chip8::execute(const opcode::Instruction& instruction) {
     switch (instruction.opcode) {
         case opcode::Opcode::LD_V_B: execute_ld_v_b(instruction); break;
+        case opcode::Opcode::ADD_V_B: execute_add_v_b(instruction); break;
 
         default: throw chip8_error("[chip8]: opcode invalid or not supported yet: " + disassembler::instruction_to_string(instruction));
     }
 }
+
+// ----- Executors -----
 
 // [6xnn] set vX to NN
 void chip8::execute_ld_v_b(const opcode::Instruction& instruction) {
     this->v_registers[instruction.x] = instruction.nn;
 }
 
+// [7xnn] add NN to vX
+void chip8::execute_add_v_b(const opcode::Instruction& instruction) {
+    this->v_registers[instruction.x] += instruction.nn;
+}
+
+// ----- Helpers for tests -----
 uint16_t chip8::get_program_counter() const {
     return this->program_counter;
 }
