@@ -6,6 +6,7 @@
 #include <vector>
 #include <stdexcept>
 #include <string>
+#include "opcode.h"
 
 class chip8_error : public std::runtime_error {
     public:
@@ -15,10 +16,17 @@ class chip8_error : public std::runtime_error {
 class chip8 {
     public:
         explicit chip8(const std::vector<uint8_t>& byte_stream);
-        uint16_t fetch();
-        uint16_t get_program_counter() const;
+        uint16_t fetch();                                           // FETCH STEP
+        uint16_t get_program_counter() const;                       // PC
+        void execute(const opcode::Instruction& instruction);       // execution dispatcher (DECODE STEP)
 
     private:
         std::array<uint8_t, MEMORY_SIZE> memory = {};       // fixed memory size 4096
         uint16_t program_counter = START_ADDRESS_OFFSET;
+        std::array<uint8_t, 16> v_registers = {};
+
+        // ----- execution functions -----
+
+        // [6xnn] set vX to NN
+        void execute_ld_v_b(const opcode::Instruction& instruction);
 };

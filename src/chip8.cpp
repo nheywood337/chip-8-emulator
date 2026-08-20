@@ -1,4 +1,5 @@
 #include "chip8.h"
+#include "disassembler.h"
 #include <fstream>
 #include <iostream>
 #include <algorithm>
@@ -27,4 +28,18 @@ uint16_t chip8::fetch() {
     catch (const std::out_of_range& e) {
         throw chip8_error(std::string("[chip8]: read out of range: ") + e.what());
     }
+}
+
+// Main execution dispatcher
+void chip8::execute(const opcode::Instruction& instruction) {
+    switch (instruction.opcode) {
+        case opcode::Opcode::LD_V_B: execute_ld_v_b(instruction); break;
+
+        default: throw chip8_error("[chip8]: opcode invalid or not supported yet: " + disassembler::instruction_to_string(instruction));
+    }
+}
+
+// [6xnn] set vX to NN
+void chip8::execute_ld_v_b(const opcode::Instruction& instruction) {
+    this->v_registers[instruction.x] = instruction.nn;
 }

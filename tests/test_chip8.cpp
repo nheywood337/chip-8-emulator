@@ -48,3 +48,10 @@ TEST_F(Chip8Test, FetchThrowsWhenBothBytesAreOutOfBounds) {
     // Both hi and lo fall outside valid memory range
     EXPECT_THROW(vm.fetch(), chip8_error);
 }
+
+TEST_F(Chip8Test, ExecuteLD_V_B) {
+    std::vector<uint8_t> rom = {0x62, 0x05};
+    chip8 vm(rom);
+
+    EXPECT_EQ(vm.execute(opcode::decode(vm.fetch())), );
+}
