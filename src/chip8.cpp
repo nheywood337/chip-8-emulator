@@ -45,6 +45,11 @@ void chip8::execute(const opcode::Instruction& instruction) {
         case opcode::Opcode::OR_V_V:    execute_or_v_v(instruction);    break;
         case opcode::Opcode::AND_V_V:   execute_and_v_v(instruction);   break;
         case opcode::Opcode::XOR_V_V:   execute_xor_v_v(instruction);   break;
+        case opcode::Opcode::ADD_V_V:   execute_add_v_v(instruction);   break;
+        case opcode::Opcode::SUB_V_V:   execute_sub_v_v(instruction);   break;
+        case opcode::Opcode::SHR_V:     execute_shr_v(instruction);     break;
+        case opcode::Opcode::SUBN_V_V:  execute_subn_v_v(instruction);  break;
+        case opcode::Opcode::SHL_V:     execute_shl_v(instruction);     break;
         case opcode::Opcode::SNE_V_V:   execute_sne_v_v(instruction);   break;
 
         default: throw chip8_error("[chip8]: opcode invalid or not supported yet: " + disassembler::instruction_to_string(instruction));
@@ -114,21 +119,70 @@ void chip8::execute_add_v_b(const opcode::Instruction& instruction) {
 // [8xy0] set vX to the value of vY
 void chip8::execute_ld_v_v(const opcode::Instruction& instruction) {
     this->v_registers.at(instruction.x) = this->v_registers.at(instruction.y);
+    this->v_registers.at(instruction.f) = 0;
 }
 
 // [8xy1] set vX to (vX OR vY) bitwise
 void chip8::execute_or_v_v(const opcode::Instruction& instruction) {
     this->v_registers.at(instruction.x) |= this->v_registers.at(instruction.y);
+    this->v_registers.at(instruction.f) = 0;
 }
 
 // [8xy2] set vX to (vX AND vY) bitwise
 void chip8::execute_and_v_v(const opcode::Instruction& instruction) {
     this->v_registers.at(instruction.x) &= this->v_registers.at(instruction.y);
+    this->v_registers.at(instruction.f) = 0;
 }
 
 // [8xy3] set vX to (vX XOR vY) bitwise
 void chip8::execute_xor_v_v(const opcode::Instruction& instruction) {
     this->v_registers.at(instruction.x) ^= this->v_registers.at(instruction.y);
+    this->v_registers.at(instruction.f) = 0;
+}
+
+// [8xy4] add vY to vX, VF = 1 on overflow else 0
+void chip8::execute_add_v_v(const opcode::Instruction& instruction) {
+    uint8_t vx = this->v_registers.at(instruction.x);
+    uint8_t vy = this->v_registers.at(instruction.y);
+    int sum = vx + vy;
+    bool overflowed = sum > 255;
+    uint8_t truncated = static_cast<uint8_t>(sum);
+
+    this->v_registers.at(instruction.x) = truncated;
+    if (overflowed) {
+        this->v_registers.at(0xf) = 1;
+    }
+    else this->v_registers.at(0xf) = 0;
+}
+
+// [8xy5] subtract vY from vX, VF = 0 on underflow else 1
+void chip8::execute_sub_v_v(const opcode::Instruction& instruction) {
+    uint8_t vx = this->v_registers.at(instruction.x);
+    uint8_t vy = this->v_registers.at(instruction.y);
+    int diff = vx - vy;
+    bool underflowed = diff < 0;
+    uint8_t truncated = static_cast<uint8_t>(diff);
+
+    this->v_registers.at(instruction.x) = truncated;
+    if (underflowed) {
+        this->v_registers.at(0xf) = 0;
+    }
+    else this->v_registers.at(0xf) = 1;
+}
+
+// [8xy6] set vX = vY, shift vX right 1 bit, VF = bit shifted out
+void chip8::execute_shr_v(const opcode::Instruction& instruction) {
+
+}
+
+// [8xy7] set vX to (vY - vX), VF = 0 on underflow else 1
+void chip8::execute_subn_v_v(const opcode::Instruction& instruction) {
+
+}
+
+// [8xyE] set vX = vY, shift vX left 1 bit, VF = bit shifted out
+void chip8::execute_shl_v(const opcode::Instruction& instruction) {
+
 }
 
 // [9xy0] skip next opcode if vX != vY

@@ -279,8 +279,8 @@ TEST_F(Chip8Test, ExecuteSNE_V_V_Equal) {
     // 0x6210 -> Set V2 = 0x10
     // 0x9120 -> Skip if V1 != V2
     std::vector<uint8_t> rom = {
-        0x61, 0x10, 
-        0x62, 0x10, 
+        0x61, 0x10,
+        0x62, 0x10,
         0x91, 0x20
     };
     chip8 vm(rom);
@@ -301,8 +301,8 @@ TEST_F(Chip8Test, ExecuteSNE_V_V_NotEqual) {
     // 0x6220 -> Set V2 = 0x20
     // 0x9120 -> Skip if V1 != V2
     std::vector<uint8_t> rom = {
-        0x61, 0x10, 
-        0x62, 0x20, 
+        0x61, 0x10,
+        0x62, 0x20,
         0x91, 0x20
     };
     chip8 vm(rom);
@@ -391,4 +391,50 @@ TEST_F(Chip8Test, ExecuteXOR_V_V) {
     vm.execute(opcode::decode(vm.fetch()));
 
     EXPECT_EQ(vm.get_register(0x1), 0xF0);
+}
+
+// 8XY4: ADD VX, VY (Set VX = VX + VY, VF = carry)
+TEST_F(Chip8Test, ExecuteADD_V_V_Overflow) {
+    // 0x61FF -> Set V1 = 0xFF (255)
+    // 0x6201 -> Set V2 = 0x01 (1)
+    // 0x8124 -> V1 += V2 (Overflows to 0x00, sets VF = 1)
+    std::vector<uint8_t> rom = {
+        0x61, 0xFF,
+        0x62, 0x01,
+        0x81, 0x24
+    };
+    chip8 vm(rom);
+
+    vm.execute(opcode::decode(vm.fetch())); // V1 = 0xFF
+    vm.execute(opcode::decode(vm.fetch())); // V2 = 0x01
+    vm.execute(opcode::decode(vm.fetch())); // V1 += V2
+
+    // Check V1 result (0xFF + 0x01 wraps around to 0x00)
+    EXPECT_EQ(vm.get_register(0x1), 0x00);
+
+    // Check VF (Register 15) flag separately for carry
+    EXPECT_EQ(vm.get_register(0xF), 1);
+}
+
+// 8XY5: SUB VX, VY (Set VX = VX - VY, VF = NOT borrow)
+TEST_F(Chip8Test, ExecuteSUB_V_V_Underflow) {
+    // 0x6105 -> Set V1 = 0x05 (5)
+    // 0x620A -> Set V2 = 0x0A (10)
+    // 0x8125 -> V1 -= V2 (Underflows to 0xFB, sets VF = 0)
+    std::vector<uint8_t> rom = {
+        0x61, 0x05,
+        0x62, 0x0A,
+        0x81, 0x25
+    };
+    chip8 vm(rom);
+
+    vm.execute(opcode::decode(vm.fetch())); // V1 = 0x05
+    vm.execute(opcode::decode(vm.fetch())); // V2 = 0x0A
+    vm.execute(opcode::decode(vm.fetch())); // V1 -= V2
+
+    // Check V1 result (5 - 10 underflows to 251 / 0xFB)
+    EXPECT_EQ(vm.get_register(0x1), 0xFB);
+
+    // Check VF (Register 15) flag separately for borrow (0 means borrow occurred)
+    EXPECT_EQ(vm.get_register(0xF), 0);
 }

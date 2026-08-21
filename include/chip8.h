@@ -71,6 +71,21 @@ class chip8 {
         // [8xy3] set vX to (vX XOR vY) bitwise
         void execute_xor_v_v(const opcode::Instruction& instruction);
 
+        // [8xy4] add vY to vX, VF = 1 on overflow else 0
+        void execute_add_v_v(const opcode::Instruction& instruction);
+
+        // [8xy5] subtract vY from vX, VF = 0 on underflow else 1
+        void execute_sub_v_v(const opcode::Instruction& instruction);
+
+        // [8xy6] set vX = vY, shift vX right 1 bit, VF = bit shifted out
+        void execute_shr_v(const opcode::Instruction& instruction);
+
+        // [8xy7] set vX to (vY - vX), VF = 0 on underflow else 1
+        void execute_subn_v_v(const opcode::Instruction& instruction);
+
+        // [8xyE] set vX = vY, shift vX left 1 bit, VF = bit shifted out
+        void execute_shl_v(const opcode::Instruction& instruction);
+
         // [9xy0] skip next opcode if vX != vY
         void execute_sne_v_v(const opcode::Instruction& instruction);
 };
