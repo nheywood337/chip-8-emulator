@@ -171,17 +171,39 @@ void chip8::execute_sub_v_v(const opcode::Instruction& instruction) {
 
 // [8xy6] set vX = vY, shift vX right 1 bit, VF = bit shifted out
 void chip8::execute_shr_v(const opcode::Instruction& instruction) {
+    // Copy VY into VX (COSMAC VIP behavior)
+    this->v_registers.at(instruction.x) = this->v_registers.at(instruction.y);
+    
+    uint8_t vx = this->v_registers.at(instruction.x);
 
+    // Perform shift
+    this->v_registers.at(instruction.x) >>= 1;
+
+    this->v_registers.at(VF) = vx & 0x1;
 }
 
-// [8xy7] set vX to (vY - vX), VF = 0 on underflow else 1
+// [8xy7] Set vX = vY - vX. VF = 1 if NO borrow (vY >= vX), else 0
 void chip8::execute_subn_v_v(const opcode::Instruction& instruction) {
+    uint8_t vx = this->v_registers.at(instruction.x);
+    uint8_t vy = this->v_registers.at(instruction.y);
 
+    this->v_registers.at(instruction.x) = vy - vx;
+
+    // Set VF to 1 if vY >= vX (no underflow/borrow), else 0
+    this->v_registers.at(VF) = (vy >= vx) ? 1 : 0;
 }
 
-// [8xyE] set vX = vY, shift vX left 1 bit, VF = bit shifted out
+// [8xyE] Set vX = vY, shift vX left 1 bit, VF = bit shifted out (MSB)
 void chip8::execute_shl_v(const opcode::Instruction& instruction) {
+    // Copy VY into VX (COSMAC VIP behavior)
+    this->v_registers.at(instruction.x) = this->v_registers.at(instruction.y);
 
+    uint8_t vx = this->v_registers.at(instruction.x);
+
+    // Perform shift
+    this->v_registers.at(instruction.x) <<= 1;
+
+    this->v_registers.at(VF) = (vx & 0x80) >> 7;
 }
 
 // [9xy0] skip next opcode if vX != vY

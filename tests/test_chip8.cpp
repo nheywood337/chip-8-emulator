@@ -542,3 +542,120 @@ TEST_F(Chip8Test, ExecuteXOR_V_V_TargetIsVF) {
     // Bitwise XOR yields 0xFF, but the unconditional VF reset forces VF = 0
     EXPECT_EQ(vm.get_register(VF), 0);
 }
+
+// 8XY6: Shift VX right by 1, VF = LSB before shift (LSB = 1)
+TEST_F(Chip8Test, ExecuteSHR_V_LSB_One) {
+    // 0x6203 -> V2 = 0x03 (0000 0011)
+    // 0x8126 -> V1 = V2 >> 1 (0000 0001 = 0x01, VF = 1)
+    std::vector<uint8_t> rom = {
+        0x62, 0x03,
+        0x81, 0x26
+    };
+    chip8 vm(rom);
+
+    vm.execute(opcode::decode(vm.fetch())); // V2 = 0x03
+    vm.execute(opcode::decode(vm.fetch())); // V1 = V2 >> 1
+
+    EXPECT_EQ(vm.get_register(0x1), 0x01);
+    EXPECT_EQ(vm.get_register(VF), 1);
+}
+
+// 8XY6: Shift VX right by 1, VF = LSB before shift (LSB = 0)
+TEST_F(Chip8Test, ExecuteSHR_V_LSB_Zero) {
+    // 0x6204 -> V2 = 0x04 (0000 0100)
+    // 0x8126 -> V1 = V2 >> 1 (0000 0010 = 0x02, VF = 0)
+    std::vector<uint8_t> rom = {
+        0x62, 0x04,
+        0x81, 0x26
+    };
+    chip8 vm(rom);
+
+    vm.execute(opcode::decode(vm.fetch())); // V2 = 0x04
+    vm.execute(opcode::decode(vm.fetch())); // V1 = V2 >> 1
+
+    EXPECT_EQ(vm.get_register(0x1), 0x02);
+    EXPECT_EQ(vm.get_register(VF), 0);
+}
+
+TEST_F(Chip8Test, ExecuteSUBN_V_V_NoUnderflow) {
+    // 0x6105 -> V1 = 5
+    // 0x620A -> V2 = 10
+    // 0x8127 -> V1 = V2 - V1 (10 - 5 = 5, VF = 1)
+    std::vector<uint8_t> rom = {0x61, 0x05, 0x62, 0x0A, 0x81, 0x27};
+    chip8 vm(rom);
+
+    vm.execute(opcode::decode(vm.fetch()));
+    vm.execute(opcode::decode(vm.fetch()));
+    vm.execute(opcode::decode(vm.fetch()));
+
+    EXPECT_EQ(vm.get_register(0x1), 0x05);
+    EXPECT_EQ(vm.get_register(VF), 1);
+}
+
+TEST_F(Chip8Test, ExecuteSUBN_V_V_Underflow) {
+    // 0x610A -> V1 = 10
+    // 0x6205 -> V2 = 5
+    // 0x8127 -> V1 = V2 - V1 (5 - 10 = -5 -> 0xFB, VF = 0)
+    std::vector<uint8_t> rom = {0x61, 0x0A, 0x62, 0x05, 0x81, 0x27};
+    chip8 vm(rom);
+
+    vm.execute(opcode::decode(vm.fetch()));
+    vm.execute(opcode::decode(vm.fetch()));
+    vm.execute(opcode::decode(vm.fetch()));
+
+    EXPECT_EQ(vm.get_register(0x1), static_cast<uint8_t>(5 - 10));
+    EXPECT_EQ(vm.get_register(VF), 0);
+}
+
+TEST_F(Chip8Test, ExecuteSUBN_V_V_TargetIsVF) {
+    // 0x6F05 -> VF = 5
+    // 0x620A -> V2 = 10
+    // 0x8F27 -> VF = V2 - VF (10 - 5 = 5 -> No borrow, VF becomes 1)
+    std::vector<uint8_t> rom = {0x6F, 0x05, 0x62, 0x0A, 0x8F, 0x27};
+    chip8 vm(rom);
+
+    vm.execute(opcode::decode(vm.fetch()));
+    vm.execute(opcode::decode(vm.fetch()));
+    vm.execute(opcode::decode(vm.fetch()));
+
+    // Flag write overrides arithmetic result
+    EXPECT_EQ(vm.get_register(VF), 1);
+}
+
+TEST_F(Chip8Test, ExecuteSHL_V_MSB_One) {
+    // 0x6285 -> V2 = 0x85 (1000 0101)
+    // 0x812E -> V1 = V2 << 1 (0000 1010 = 0x0A, VF = 1)
+    std::vector<uint8_t> rom = {0x62, 0x85, 0x81, 0x2E};
+    chip8 vm(rom);
+
+    vm.execute(opcode::decode(vm.fetch()));
+    vm.execute(opcode::decode(vm.fetch()));
+
+    EXPECT_EQ(vm.get_register(0x1), 0x0A);
+    EXPECT_EQ(vm.get_register(VF), 1);
+}
+
+TEST_F(Chip8Test, ExecuteSHL_V_MSB_Zero) {
+    // 0x6245 -> V2 = 0x45 (0100 0101)
+    // 0x812E -> V1 = V2 << 1 (1000 1010 = 0x8A, VF = 0)
+    std::vector<uint8_t> rom = {0x62, 0x45, 0x81, 0x2E};
+    chip8 vm(rom);
+
+    vm.execute(opcode::decode(vm.fetch()));
+    vm.execute(opcode::decode(vm.fetch()));
+
+    EXPECT_EQ(vm.get_register(0x1), 0x8A);
+    EXPECT_EQ(vm.get_register(VF), 0);
+}
+
+TEST_F(Chip8Test, ExecuteSHL_V_TargetIsVF) {
+    // 0x6F85 -> VF = 0x85 (1000 0101)
+    // 0x8FFE -> VF = VF << 1 (MSB was 1, so VF becomes 1)
+    std::vector<uint8_t> rom = {0x6F, 0x85, 0x8F, 0xFE};
+    chip8 vm(rom);
+
+    vm.execute(opcode::decode(vm.fetch()));
+    vm.execute(opcode::decode(vm.fetch()));
+
+    EXPECT_EQ(vm.get_register(VF), 1);
+}
