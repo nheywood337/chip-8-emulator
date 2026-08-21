@@ -202,3 +202,27 @@ TEST_F(Chip8Test, ExecuteSE_V_B_NotEqualNN) {
     vm.execute(opcode::decode(vm.fetch()));
     EXPECT_EQ(vm.get_program_counter(), pc_before_skip + 2);
 }
+
+// 4XNN skip next opcode if vX != NN
+TEST_F(Chip8Test, ExecuteSNE_V_B_EqualNN) {
+    std::vector<uint8_t> rom = {0x61, 0x10, 0x41, 0x10};
+    chip8 vm(rom);
+
+    vm.execute(opcode::decode(vm.fetch()));
+    uint16_t pc_before_skip = vm.get_program_counter();
+
+    vm.execute(opcode::decode(vm.fetch()));
+    EXPECT_EQ(vm.get_program_counter(), pc_before_skip + 2);
+}
+
+// 4XNN skip next opcode if vX != NN
+TEST_F(Chip8Test, ExecuteSNE_V_B_NotEqualNN) {
+    std::vector<uint8_t> rom = {0x61, 0x20, 0x41, 0x10};
+    chip8 vm(rom);
+
+    vm.execute(opcode::decode(vm.fetch()));
+    uint16_t pc_before_skip = vm.get_program_counter();
+
+    vm.execute(opcode::decode(vm.fetch()));
+    EXPECT_EQ(vm.get_program_counter(), pc_before_skip + 4);
+}

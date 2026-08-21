@@ -47,6 +47,9 @@ class chip8 {
         // [3xnn] skip next opcode if vX == NN
         void execute_se_v_b(const opcode::Instruction& instruction);
 
+        // [4xnn] skip next opcode if vX != NN
+        void execute_sne_v_b(const opcode::Instruction& instruction);
+
         // [6xnn] set vX to NN
         void execute_ld_v_b(const opcode::Instruction& instruction);
 

@@ -37,6 +37,7 @@ void chip8::execute(const opcode::Instruction& instruction) {
         case opcode::Opcode::JP_ADDR:   execute_jp_addr(instruction); break;
         case opcode::Opcode::CALL_ADDR: execute_call_addr(instruction); break;
         case opcode::Opcode::SE_V_B:    execute_se_v_b(instruction); break;
+        case opcode::Opcode::SNE_V_B:   execute_sne_v_b(instruction); break;
         case opcode::Opcode::LD_V_B:    execute_ld_v_b(instruction); break;
         case opcode::Opcode::ADD_V_B:   execute_add_v_b(instruction); break;
 
@@ -76,6 +77,13 @@ void chip8::execute_call_addr(const opcode::Instruction& instruction) {
 // [3xnn] skip next opcode if vX == NN
 void chip8::execute_se_v_b(const opcode::Instruction& instruction) {
     if (this->get_register(instruction.x) == instruction.nn) {
+        advance_pc();
+    }
+}
+
+// [4xnn] skip next opcode if vX != NN
+void chip8::execute_sne_v_b(const opcode::Instruction& instruction) {
+    if (this->get_register(instruction.x) != instruction.nn) {
         advance_pc();
     }
 }
