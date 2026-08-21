@@ -371,6 +371,7 @@ TEST_F(Chip8Test, ExecuteAND_V_V) {
     vm.execute(opcode::decode(vm.fetch()));
     vm.execute(opcode::decode(vm.fetch()));
 
+    // FIX: Compare V1 to expected value 0x0F, not index constant VF
     EXPECT_EQ(vm.get_register(0x1), 0x0F);
 }
 
@@ -413,7 +414,7 @@ TEST_F(Chip8Test, ExecuteADD_V_V_Overflow) {
     EXPECT_EQ(vm.get_register(0x1), 0x00);
 
     // Check VF (Register 15) flag separately for carry
-    EXPECT_EQ(vm.get_register(0xF), 1);
+    EXPECT_EQ(vm.get_register(VF), 1);
 }
 
 // 8XY5: SUB VX, VY (Set VX = VX - VY, VF = NOT borrow)
@@ -436,7 +437,7 @@ TEST_F(Chip8Test, ExecuteSUB_V_V_Underflow) {
     EXPECT_EQ(vm.get_register(0x1), 0xFB);
 
     // Check VF (Register 15) flag separately for borrow (0 means borrow occurred)
-    EXPECT_EQ(vm.get_register(0xF), 0);
+    EXPECT_EQ(vm.get_register(VF), 0);
 }
 
 // 8FY4: ADD VF, VY where X = 0xF (Target register is VF itself)
@@ -458,7 +459,7 @@ TEST_F(Chip8Test, ExecuteADD_V_V_TargetIsVF) {
     // Flag write occurs after arithmetic calculation:
     // sum = 0xE0 + 0x30 = 0x110 (272 > 255 -> carry flag = 1)
     // VF gets set to 1 (carry flag), NOT the truncated sum 0x10
-    EXPECT_EQ(vm.get_register(0xF), 1);
+    EXPECT_EQ(vm.get_register(VF), 1);
 }
 
 // 8FY5: SUB VF, VY where X = 0xF (Target register is VF itself)
@@ -479,5 +480,65 @@ TEST_F(Chip8Test, ExecuteSUB_V_V_TargetIsVF) {
 
     // diff = 10 - 5 = 5 (>= 0 -> no borrow flag = 1)
     // VF gets set to 1 (no-borrow flag), NOT the arithmetic difference 5
-    EXPECT_EQ(vm.get_register(0xF), 1);
+    EXPECT_EQ(vm.get_register(VF), 1);
+}
+
+// 8FY1: OR VF, VY where X = 0xF (VF is overwritten then reset to 0)
+TEST_F(Chip8Test, ExecuteOR_V_V_TargetIsVF) {
+    // 0x6FF0 -> Set VF = 0xF0
+    // 0x620F -> Set V2 = 0x0F
+    // 0x8F21 -> VF |= V2 (Result would be 0xFF, but VF is reset to 0)
+    std::vector<uint8_t> rom = {
+        0x6F, 0xF0,
+        0x62, 0x0F,
+        0x8F, 0x21
+    };
+    chip8 vm(rom);
+
+    vm.execute(opcode::decode(vm.fetch())); // VF = 0xF0
+    vm.execute(opcode::decode(vm.fetch())); // V2 = 0x0F
+    vm.execute(opcode::decode(vm.fetch())); // VF |= V2
+
+    // Bitwise OR yields 0xFF, but the unconditional VF reset forces VF = 0
+    EXPECT_EQ(vm.get_register(VF), 0);
+}
+
+// 8FY2: AND VF, VY where X = 0xF (VF is overwritten then reset to 0)
+TEST_F(Chip8Test, ExecuteAND_V_V_TargetIsVF) {
+    // 0x6FFF -> Set VF = 0xFF
+    // 0x62FF -> Set V2 = 0xFF
+    // 0x8F22 -> VF &= V2 (Result would be 0xFF, but VF is reset to 0)
+    std::vector<uint8_t> rom = {
+        0x6F, 0xFF,
+        0x62, 0xFF,
+        0x8F, 0x22
+    };
+    chip8 vm(rom);
+
+    vm.execute(opcode::decode(vm.fetch())); // VF = 0xFF
+    vm.execute(opcode::decode(vm.fetch())); // V2 = 0xFF
+    vm.execute(opcode::decode(vm.fetch())); // VF &= V2
+
+    // Bitwise AND yields 0xFF, but the unconditional VF reset forces VF = 0
+    EXPECT_EQ(vm.get_register(VF), 0);
+}
+
+// 8FY3: XOR VF, VY where X = 0xF (VF is overwritten then reset to 0)
+TEST_F(Chip8Test, ExecuteXOR_V_V_TargetIsVF) {
+    // 0x6FFF -> Set VF = 0xFF
+    // 0x6200 -> Set V2 = 0x00
+    // 0x8F23 -> VF ^= V2 (Result would be 0xFF, but VF is reset to 0)
+    std::vector<uint8_t> rom = {
+        0x6F, 0xFF,
+        0x62, 0x00,
+        0x8F, 0x23
+    };
+    chip8 vm(rom);
+
+    vm.execute(opcode::decode(vm.fetch())); // VF = 0xFF
+    vm.execute(opcode::decode(vm.fetch())); // V2 = 0x00
+    vm.execute(opcode::decode(vm.fetch())); // VF ^= V2
+
+    // Bitwise XOR yields 0xFF, but the unconditional VF reset forces VF = 0
+    EXPECT_EQ(vm.get_register(VF), 0);
 }

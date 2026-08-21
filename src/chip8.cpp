@@ -124,19 +124,19 @@ void chip8::execute_ld_v_v(const opcode::Instruction& instruction) {
 // [8xy1] set vX to (vX OR vY) bitwise
 void chip8::execute_or_v_v(const opcode::Instruction& instruction) {
     this->v_registers.at(instruction.x) |= this->v_registers.at(instruction.y);
-    this->v_registers.at(VF) = 0; // COSMAP side effect quirk
+    this->v_registers.at(VF) = 0; // COSMAC VIP side effect quirk
 }
 
 // [8xy2] set vX to (vX AND vY) bitwise
 void chip8::execute_and_v_v(const opcode::Instruction& instruction) {
     this->v_registers.at(instruction.x) &= this->v_registers.at(instruction.y);
-    this->v_registers.at(VF) = 0; // COSMAP side effect quirk
+    this->v_registers.at(VF) = 0; // COSMAC VIP side effect quirk
 }
 
 // [8xy3] set vX to (vX XOR vY) bitwise
 void chip8::execute_xor_v_v(const opcode::Instruction& instruction) {
     this->v_registers.at(instruction.x) ^= this->v_registers.at(instruction.y);
-    this->v_registers.at(VF) = 0; // COSMAP side effect quirk
+    this->v_registers.at(VF) = 0; // COSMAC VIP side effect quirk
 }
 
 // [8xy4] add vY to vX, VF = 1 on overflow else 0
