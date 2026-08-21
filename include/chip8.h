@@ -30,6 +30,9 @@ class chip8 {
         std::array<uint16_t, 16> stack = {};                // stack
         uint8_t stack_pointer = 0;                          // pointer to next free slot on stack
 
+        // ----- helper functions -----
+        void advance_pc(); // advances program counter by one instruction
+
         // ----- execution functions -----
 
         // [00EE] returns from subroutine to address pulled from stack
@@ -40,6 +43,9 @@ class chip8 {
 
         // [2nnn] push return address onto stack and call subroutine at address NNN
         void execute_call_addr(const opcode::Instruction& instruction);
+
+        // [3xnn] skip next opcode if vX == NN
+        void execute_se_v_b(const opcode::Instruction& instruction);
 
         // [6xnn] set vX to NN
         void execute_ld_v_b(const opcode::Instruction& instruction);
