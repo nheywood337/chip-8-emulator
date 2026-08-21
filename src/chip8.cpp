@@ -119,25 +119,24 @@ void chip8::execute_add_v_b(const opcode::Instruction& instruction) {
 // [8xy0] set vX to the value of vY
 void chip8::execute_ld_v_v(const opcode::Instruction& instruction) {
     this->v_registers.at(instruction.x) = this->v_registers.at(instruction.y);
-    this->v_registers.at(instruction.f) = 0;
 }
 
 // [8xy1] set vX to (vX OR vY) bitwise
 void chip8::execute_or_v_v(const opcode::Instruction& instruction) {
     this->v_registers.at(instruction.x) |= this->v_registers.at(instruction.y);
-    this->v_registers.at(instruction.f) = 0;
+    this->v_registers.at(VF) = 0; // COSMAP side effect quirk
 }
 
 // [8xy2] set vX to (vX AND vY) bitwise
 void chip8::execute_and_v_v(const opcode::Instruction& instruction) {
     this->v_registers.at(instruction.x) &= this->v_registers.at(instruction.y);
-    this->v_registers.at(instruction.f) = 0;
+    this->v_registers.at(VF) = 0; // COSMAP side effect quirk
 }
 
 // [8xy3] set vX to (vX XOR vY) bitwise
 void chip8::execute_xor_v_v(const opcode::Instruction& instruction) {
     this->v_registers.at(instruction.x) ^= this->v_registers.at(instruction.y);
-    this->v_registers.at(instruction.f) = 0;
+    this->v_registers.at(VF) = 0; // COSMAP side effect quirk
 }
 
 // [8xy4] add vY to vX, VF = 1 on overflow else 0
@@ -150,9 +149,9 @@ void chip8::execute_add_v_v(const opcode::Instruction& instruction) {
 
     this->v_registers.at(instruction.x) = truncated;
     if (overflowed) {
-        this->v_registers.at(0xf) = 1;
+        this->v_registers.at(VF) = 1;
     }
-    else this->v_registers.at(0xf) = 0;
+    else this->v_registers.at(VF) = 0;
 }
 
 // [8xy5] subtract vY from vX, VF = 0 on underflow else 1
@@ -165,9 +164,9 @@ void chip8::execute_sub_v_v(const opcode::Instruction& instruction) {
 
     this->v_registers.at(instruction.x) = truncated;
     if (underflowed) {
-        this->v_registers.at(0xf) = 0;
+        this->v_registers.at(VF) = 0;
     }
-    else this->v_registers.at(0xf) = 1;
+    else this->v_registers.at(VF) = 1;
 }
 
 // [8xy6] set vX = vY, shift vX right 1 bit, VF = bit shifted out

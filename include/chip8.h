@@ -8,6 +8,8 @@
 #include <string>
 #include "opcode.h"
 
+static constexpr uint8_t VF = 0xF;
+
 class chip8_error : public std::runtime_error {
     public:
         explicit chip8_error(const std::string& msg) : std::runtime_error(msg) {}
