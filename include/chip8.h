@@ -29,9 +29,7 @@ class chip8 {
         std::array<uint8_t, 16> v_registers = {};           // Vx
         std::array<uint16_t, 16> stack = {};                // stack
         uint8_t stack_pointer = 0;                          // pointer to next free slot on stack
-
-        // ----- helper functions -----
-        void advance_pc(); // advances program counter by one instruction
+        
 
         // ----- execution functions -----
 

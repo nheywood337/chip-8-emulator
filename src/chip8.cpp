@@ -56,11 +56,6 @@ void chip8::execute(const opcode::Instruction& instruction) {
     }
 }
 
-// ----- Helpers -----
-void chip8::advance_pc() {
-    program_counter += 2;
-}
-
 // ----- Executors -----
 
 // [00EE] returns from subroutine to address pulled from stack
@@ -88,21 +83,21 @@ void chip8::execute_call_addr(const opcode::Instruction& instruction) {
 // [3xnn] skip next opcode if vX == NN
 void chip8::execute_se_v_b(const opcode::Instruction& instruction) {
     if (this->get_register(instruction.x) == instruction.nn) {
-        advance_pc();
+        this->program_counter += 2;
     }
 }
 
 // [4xnn] skip next opcode if vX != NN
 void chip8::execute_sne_v_b(const opcode::Instruction& instruction) {
     if (this->get_register(instruction.x) != instruction.nn) {
-        advance_pc();
+        this->program_counter += 2;
     }
 }
 
 // [5xy0] skip next opcode if vX == vY
 void chip8::execute_se_v_v(const opcode::Instruction& instruction) {
     if (this->get_register(instruction.x) == get_register(instruction.y)) {
-        advance_pc();
+        this->program_counter += 2;
     }
 }
 
@@ -209,7 +204,7 @@ void chip8::execute_shl_v(const opcode::Instruction& instruction) {
 // [9xy0] skip next opcode if vX != vY
 void chip8::execute_sne_v_v(const opcode::Instruction& instruction) {
     if (this->get_register(instruction.x) != get_register(instruction.y)) {
-        advance_pc();
+        this->program_counter += 2;
     }
 }
 
