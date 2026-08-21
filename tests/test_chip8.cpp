@@ -226,3 +226,93 @@ TEST_F(Chip8Test, ExecuteSNE_V_B_NotEqualNN) {
     vm.execute(opcode::decode(vm.fetch()));
     EXPECT_EQ(vm.get_program_counter(), pc_before_skip + 4);
 }
+
+// 5XY0: Skip next opcode if VX == VY (Equal -> Skip)
+TEST_F(Chip8Test, ExecuteSE_V_V_Equal) {
+    // 0x6110 -> Set V1 = 0x10
+    // 0x6210 -> Set V2 = 0x10
+    // 0x5120 -> Skip if V1 == V2 (Equal -> Should skip)
+    std::vector<uint8_t> rom = {
+        0x61, 0x10, 
+        0x62, 0x10, 
+        0x51, 0x20
+    };
+    chip8 vm(rom);
+
+    vm.execute(opcode::decode(vm.fetch())); // Set V1 = 0x10
+    vm.execute(opcode::decode(vm.fetch())); // Set V2 = 0x10
+    
+    uint16_t pc_before_skip = vm.get_program_counter(); // 0x204
+
+    vm.execute(opcode::decode(vm.fetch())); // Execute 5120
+    
+    // Fetch (+2) + Skip (+2) = +4 total
+    EXPECT_EQ(vm.get_program_counter(), pc_before_skip + 4);
+}
+
+// 5XY0: Skip next opcode if VX == VY (Not Equal -> No Skip)
+TEST_F(Chip8Test, ExecuteSE_V_V_NotEqual) {
+    // 0x6110 -> Set V1 = 0x10
+    // 0x6220 -> Set V2 = 0x20
+    // 0x5120 -> Skip if V1 == V2 (Not equal -> Should NOT skip)
+    std::vector<uint8_t> rom = {
+        0x61, 0x10, 
+        0x62, 0x20, 
+        0x51, 0x20
+    };
+    chip8 vm(rom);
+
+    vm.execute(opcode::decode(vm.fetch())); // Set V1 = 0x10
+    vm.execute(opcode::decode(vm.fetch())); // Set V2 = 0x20
+    
+    uint16_t pc_before_skip = vm.get_program_counter(); // 0x204
+
+    vm.execute(opcode::decode(vm.fetch())); // Execute 5120
+    
+    // Normal step (+2)
+    EXPECT_EQ(vm.get_program_counter(), pc_before_skip + 2);
+}
+
+// 9XY0: Skip next opcode if VX != VY (Equal -> No Skip)
+TEST_F(Chip8Test, ExecuteSNE_V_V_Equal) {
+    // 0x6110 -> Set V1 = 0x10
+    // 0x6210 -> Set V2 = 0x10
+    // 0x9120 -> Skip if V1 != V2
+    std::vector<uint8_t> rom = {
+        0x61, 0x10, 
+        0x62, 0x10, 
+        0x91, 0x20
+    };
+    chip8 vm(rom);
+
+    vm.execute(opcode::decode(vm.fetch()));
+    vm.execute(opcode::decode(vm.fetch()));
+    
+    uint16_t pc_before_skip = vm.get_program_counter(); // 0x204
+
+    // Equal values -> Do NOT skip (+2)
+    vm.execute(opcode::decode(vm.fetch()));
+    EXPECT_EQ(vm.get_program_counter(), pc_before_skip + 2);
+}
+
+// 9XY0: Skip next opcode if VX != VY (Not Equal -> Skip)
+TEST_F(Chip8Test, ExecuteSNE_V_V_NotEqual) {
+    // 0x6110 -> Set V1 = 0x10
+    // 0x6220 -> Set V2 = 0x20
+    // 0x9120 -> Skip if V1 != V2
+    std::vector<uint8_t> rom = {
+        0x61, 0x10, 
+        0x62, 0x20, 
+        0x91, 0x20
+    };
+    chip8 vm(rom);
+
+    vm.execute(opcode::decode(vm.fetch()));
+    vm.execute(opcode::decode(vm.fetch()));
+    
+    uint16_t pc_before_skip = vm.get_program_counter(); // 0x204
+
+    // Not equal values -> Skip (+4)
+    vm.execute(opcode::decode(vm.fetch()));
+    EXPECT_EQ(vm.get_program_counter(), pc_before_skip + 4);
+}

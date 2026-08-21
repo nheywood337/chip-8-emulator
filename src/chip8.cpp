@@ -38,8 +38,10 @@ void chip8::execute(const opcode::Instruction& instruction) {
         case opcode::Opcode::CALL_ADDR: execute_call_addr(instruction); break;
         case opcode::Opcode::SE_V_B:    execute_se_v_b(instruction); break;
         case opcode::Opcode::SNE_V_B:   execute_sne_v_b(instruction); break;
+        case opcode::Opcode::SE_V_V:    execute_se_v_v(instruction); break;
         case opcode::Opcode::LD_V_B:    execute_ld_v_b(instruction); break;
         case opcode::Opcode::ADD_V_B:   execute_add_v_b(instruction); break;
+        case opcode::Opcode::SNE_V_V:   execute_sne_v_v(instruction); break;
 
         default: throw chip8_error("[chip8]: opcode invalid or not supported yet: " + disassembler::instruction_to_string(instruction));
     }
@@ -88,6 +90,13 @@ void chip8::execute_sne_v_b(const opcode::Instruction& instruction) {
     }
 }
 
+// [5xy0] skip next opcode if vX == vY
+void chip8::execute_se_v_v(const opcode::Instruction& instruction) {
+    if (this->get_register(instruction.x) == get_register(instruction.y)) {
+        advance_pc();
+    }
+}
+
 // [6xnn] set vX to NN
 void chip8::execute_ld_v_b(const opcode::Instruction& instruction) {
     this->v_registers.at(instruction.x) = instruction.nn;
@@ -97,6 +106,14 @@ void chip8::execute_ld_v_b(const opcode::Instruction& instruction) {
 void chip8::execute_add_v_b(const opcode::Instruction& instruction) {
     this->v_registers.at(instruction.x) += instruction.nn;
 }
+
+// [9xy0] skip next opcode if vX != vY
+void chip8::execute_sne_v_v(const opcode::Instruction& instruction) {
+    if (this->get_register(instruction.x) != get_register(instruction.y)) {
+        advance_pc();
+    }
+}
+
 
 // ----- Helpers for tests -----
 uint16_t chip8::get_program_counter() const {
