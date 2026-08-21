@@ -316,3 +316,79 @@ TEST_F(Chip8Test, ExecuteSNE_V_V_NotEqual) {
     vm.execute(opcode::decode(vm.fetch()));
     EXPECT_EQ(vm.get_program_counter(), pc_before_skip + 4);
 }
+
+// 8XY0: Set VX = VY
+TEST_F(Chip8Test, ExecuteLD_V_V) {
+    // 0x6110 -> Set V1 = 0x10
+    // 0x6220 -> Set V2 = 0x20
+    // 0x8120 -> Set V1 = V2
+    std::vector<uint8_t> rom = {
+        0x61, 0x10,
+        0x62, 0x20,
+        0x81, 0x20
+    };
+    chip8 vm(rom);
+
+    vm.execute(opcode::decode(vm.fetch()));
+    vm.execute(opcode::decode(vm.fetch()));
+    vm.execute(opcode::decode(vm.fetch()));
+
+    EXPECT_EQ(vm.get_register(0x1), 0x20);
+}
+
+// 8XY1: Set VX = VX | VY
+TEST_F(Chip8Test, ExecuteOR_V_V) {
+    // 0x610F -> Set V1 = 0x0F (00001111)
+    // 0x62F0 -> Set V2 = 0xF0 (11110000)
+    // 0x8121 -> V1 |= V2     (11111111 = 0xFF)
+    std::vector<uint8_t> rom = {
+        0x61, 0x0F,
+        0x62, 0xF0,
+        0x81, 0x21
+    };
+    chip8 vm(rom);
+
+    vm.execute(opcode::decode(vm.fetch()));
+    vm.execute(opcode::decode(vm.fetch()));
+    vm.execute(opcode::decode(vm.fetch()));
+
+    EXPECT_EQ(vm.get_register(0x1), 0xFF);
+}
+
+// 8XY2: Set VX = VX & VY
+TEST_F(Chip8Test, ExecuteAND_V_V) {
+    // 0x61FF -> Set V1 = 0xFF (11111111)
+    // 0x620F -> Set V2 = 0x0F (00001111)
+    // 0x8122 -> V1 &= V2     (00001111 = 0x0F)
+    std::vector<uint8_t> rom = {
+        0x61, 0xFF,
+        0x62, 0x0F,
+        0x81, 0x22
+    };
+    chip8 vm(rom);
+
+    vm.execute(opcode::decode(vm.fetch()));
+    vm.execute(opcode::decode(vm.fetch()));
+    vm.execute(opcode::decode(vm.fetch()));
+
+    EXPECT_EQ(vm.get_register(0x1), 0x0F);
+}
+
+// 8XY3: Set VX = VX ^ VY
+TEST_F(Chip8Test, ExecuteXOR_V_V) {
+    // 0x61FF -> Set V1 = 0xFF (11111111)
+    // 0x620F -> Set V2 = 0x0F (00001111)
+    // 0x8123 -> V1 ^= V2     (11110000 = 0xF0)
+    std::vector<uint8_t> rom = {
+        0x61, 0xFF,
+        0x62, 0x0F,
+        0x81, 0x23
+    };
+    chip8 vm(rom);
+
+    vm.execute(opcode::decode(vm.fetch()));
+    vm.execute(opcode::decode(vm.fetch()));
+    vm.execute(opcode::decode(vm.fetch()));
+
+    EXPECT_EQ(vm.get_register(0x1), 0xF0);
+}

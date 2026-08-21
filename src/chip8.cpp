@@ -33,15 +33,19 @@ uint16_t chip8::fetch() {
 // Main execution dispatcher
 void chip8::execute(const opcode::Instruction& instruction) {
     switch (instruction.opcode) {
-        case opcode::Opcode::RET:       execute_ret(); break;
-        case opcode::Opcode::JP_ADDR:   execute_jp_addr(instruction); break;
+        case opcode::Opcode::RET:       execute_ret();                  break;
+        case opcode::Opcode::JP_ADDR:   execute_jp_addr(instruction);   break;
         case opcode::Opcode::CALL_ADDR: execute_call_addr(instruction); break;
-        case opcode::Opcode::SE_V_B:    execute_se_v_b(instruction); break;
-        case opcode::Opcode::SNE_V_B:   execute_sne_v_b(instruction); break;
-        case opcode::Opcode::SE_V_V:    execute_se_v_v(instruction); break;
-        case opcode::Opcode::LD_V_B:    execute_ld_v_b(instruction); break;
-        case opcode::Opcode::ADD_V_B:   execute_add_v_b(instruction); break;
-        case opcode::Opcode::SNE_V_V:   execute_sne_v_v(instruction); break;
+        case opcode::Opcode::SE_V_B:    execute_se_v_b(instruction);    break;
+        case opcode::Opcode::SNE_V_B:   execute_sne_v_b(instruction);   break;
+        case opcode::Opcode::SE_V_V:    execute_se_v_v(instruction);    break;
+        case opcode::Opcode::LD_V_B:    execute_ld_v_b(instruction);    break;
+        case opcode::Opcode::ADD_V_B:   execute_add_v_b(instruction);   break;
+        case opcode::Opcode::LD_V_V:    execute_ld_v_v(instruction);    break;
+        case opcode::Opcode::OR_V_V:    execute_or_v_v(instruction);    break;
+        case opcode::Opcode::AND_V_V:   execute_and_v_v(instruction);   break;
+        case opcode::Opcode::XOR_V_V:   execute_xor_v_v(instruction);   break;
+        case opcode::Opcode::SNE_V_V:   execute_sne_v_v(instruction);   break;
 
         default: throw chip8_error("[chip8]: opcode invalid or not supported yet: " + disassembler::instruction_to_string(instruction));
     }
@@ -105,6 +109,26 @@ void chip8::execute_ld_v_b(const opcode::Instruction& instruction) {
 // [7xnn] add NN to vX
 void chip8::execute_add_v_b(const opcode::Instruction& instruction) {
     this->v_registers.at(instruction.x) += instruction.nn;
+}
+
+// [8xy0] set vX to the value of vY
+void chip8::execute_ld_v_v(const opcode::Instruction& instruction) {
+    this->v_registers.at(instruction.x) = this->v_registers.at(instruction.y);
+}
+
+// [8xy1] set vX to (vX OR vY) bitwise
+void chip8::execute_or_v_v(const opcode::Instruction& instruction) {
+    this->v_registers.at(instruction.x) |= this->v_registers.at(instruction.y);
+}
+
+// [8xy2] set vX to (vX AND vY) bitwise
+void chip8::execute_and_v_v(const opcode::Instruction& instruction) {
+    this->v_registers.at(instruction.x) &= this->v_registers.at(instruction.y);
+}
+
+// [8xy3] set vX to (vX XOR vY) bitwise
+void chip8::execute_xor_v_v(const opcode::Instruction& instruction) {
+    this->v_registers.at(instruction.x) ^= this->v_registers.at(instruction.y);
 }
 
 // [9xy0] skip next opcode if vX != vY

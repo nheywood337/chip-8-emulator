@@ -59,6 +59,18 @@ class chip8 {
         // [7xnn] add NN to vX
         void execute_add_v_b(const opcode::Instruction& instruction);
 
+       // [8xy0] set vX to the value of vY
+       void execute_ld_v_v(const opcode::Instruction& instruction);
+
+        // [8xy1] set vX to (vX OR vY) bitwise
+       void execute_or_v_v(const opcode::Instruction& instruction);
+
+        // [8xy2] set vX to (vX AND vY) bitwise
+       void execute_and_v_v(const opcode::Instruction& instruction);
+
+       // [8xy3] set vX to (vX XOR vY) bitwise
+       void execute_xor_v_v(const opcode::Instruction& instruction);
+
         // [9xy0] skip next opcode if vX != vY
         void execute_sne_v_v(const opcode::Instruction& instruction);
 };
