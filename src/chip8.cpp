@@ -3,6 +3,7 @@
 #include <fstream>
 #include <iostream>
 #include <algorithm>
+#include <random>
 
 chip8::chip8(const std::vector<uint8_t>& byte_stream) {
     // Guard for a ROM that's too large for our buffer
@@ -53,6 +54,7 @@ void chip8::execute(const opcode::Instruction& instruction) {
         case opcode::Opcode::SNE_V_V:   execute_sne_v_v(instruction);   break;
         case opcode::Opcode::LD_I_ADDR: execute_ld_i_addr(instruction); break;
         case opcode::Opcode::JP_V_ADDR: execute_jp_v_addr(instruction); break;
+        case opcode::Opcode::RND_V_B:   execute_rnd_v_b(instruction);   break;
 
         default: throw chip8_error("[chip8]: opcode invalid or not supported yet: " + disassembler::instruction_to_string(instruction));
     }
@@ -218,6 +220,12 @@ void chip8::execute_ld_i_addr(const opcode::Instruction& instruction) {
 // [Bnnn] jump to address NNN + v0
 void chip8::execute_jp_v_addr(const opcode::Instruction& instruction) {
     this->program_counter = instruction.nnn + this->get_register(0);
+}
+
+// [Cxnn] set vX to random byte AND NN
+void chip8::execute_rnd_v_b(const opcode::Instruction& instruction) {
+    uint8_t random_byte = static_cast<uint8_t>(rand() % 256); // Generate a random byte (0-255)
+    this->v_registers.at(instruction.x) = random_byte & instruction.nn;
 }
 
 

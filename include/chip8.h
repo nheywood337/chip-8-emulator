@@ -94,4 +94,7 @@ class chip8 {
 
         // [Bnnn] jump to address NNN + v0
         void execute_jp_v_addr(const opcode::Instruction& instruction);
+
+        // [Cxnn] set vX to (random byte AND NN)
+        void execute_rnd_v_b(const opcode::Instruction& instruction);
 };
