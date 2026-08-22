@@ -3,7 +3,8 @@
 #include <fstream>
 #include <iostream>
 #include <algorithm>
-#include <random>
+#include <cstdlib>
+#include <ctime>
 
 chip8::chip8(const std::vector<uint8_t>& byte_stream) {
     // Guard for a ROM that's too large for our buffer
@@ -224,7 +225,7 @@ void chip8::execute_jp_v_addr(const opcode::Instruction& instruction) {
 
 // [Cxnn] set vX to random byte AND NN
 void chip8::execute_rnd_v_b(const opcode::Instruction& instruction) {
-    uint8_t random_byte = static_cast<uint8_t>(rand() % 256); // Generate a random byte (0-255)
+    uint8_t random_byte = static_cast<uint8_t>(dist(rng)); 
     this->v_registers.at(instruction.x) = random_byte & instruction.nn;
 }
 

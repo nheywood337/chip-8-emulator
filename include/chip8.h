@@ -7,6 +7,7 @@
 #include <stdexcept>
 #include <string>
 #include "opcode.h"
+#include <random>
 
 class chip8_error : public std::runtime_error {
     public:
@@ -31,6 +32,8 @@ class chip8 {
         std::array<uint16_t, 16> stack = {};                // stack
         uint8_t stack_pointer = 0;                          // pointer to next free slot on stack
         uint16_t I = 0;                                     // I
+        std::mt19937 rng{std::random_device{}()}; 
+        std::uniform_int_distribution<uint16_t> dist{0, 255};
         
 
         // ----- execution functions -----
