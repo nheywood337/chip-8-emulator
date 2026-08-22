@@ -94,6 +94,7 @@ void chip8::execute(const opcode::Instruction& instruction) {
         case opcode::Opcode::SKP_V:     execute_skp_v(instruction);     break;
         case opcode::Opcode::SKNP_V:    execute_sknp_v(instruction);    break;
         case opcode::Opcode::ADD_I_V:   execute_add_i_v(instruction);   break;
+        case opcode::Opcode::LD_V_DT:   execute_ld_v_dt(instruction);   break;
         case opcode::Opcode::LD_DT_V:   execute_ld_dt_v(instruction);   break;
         case opcode::Opcode::LD_ST_V:   execute_ld_st_v(instruction);   break;
         
@@ -334,6 +335,11 @@ void chip8::execute_sknp_v(const opcode::Instruction& instruction) {
 // [Fx1E] Add Vx to I. VF is not affected.
 void chip8::execute_add_i_v(const opcode::Instruction& instruction) {
     this->I += this->get_register(instruction.x);
+}
+
+// [Fx07] Set Vx to the value of the delay timer. VF is not affected.
+void chip8::execute_ld_v_dt(const opcode::Instruction& instruction) {
+    this->v_registers.at(instruction.x) = this->delay_timer;
 }
 
 // [Fx15] Set delay timer to vX. VF is not affected.

@@ -796,3 +796,14 @@ TEST_F(Chip8Test, ExecuteLD_ST_V_DoesNotModifyVF) {
     EXPECT_EQ(vm.get_sound_timer(), 0x00);
     EXPECT_EQ(vm.get_register(VF), 0xF0); // VF shouldn't change
 }
+
+TEST_F(Chip8Test, ExecuteLD_V_DT) {
+    std::vector<uint8_t> rom = {0xF1, 0x15, 0x61, 0x00, 0xF1, 0x07};
+    chip8 vm(rom);
+
+    vm.execute(opcode::decode(vm.fetch())); // DT = V1
+    vm.execute(opcode::decode(vm.fetch())); // V1 = 0
+    vm.execute(opcode::decode(vm.fetch())); // V1 = DT
+
+    EXPECT_EQ(vm.get_register(0x1), vm.get_delay_timer());
+}

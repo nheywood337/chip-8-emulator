@@ -46,7 +46,6 @@ class chip8 {
         uint8_t sound_timer = 0;                            // sound timer
         std::array<uint8_t, 16> keypad = {};                // keypad state
         std::array<uint8_t, DISPLAY_WIDTH * DISPLAY_HEIGHT> display = {}; // display buffer
-        bool is_running = true;                                      // main loop control
         
         // for random number generation
         std::mt19937 rng{std::random_device{}()}; 
@@ -128,6 +127,9 @@ class chip8 {
 
         // [ExA1] skip next opcode if key in vX is NOT pressed
         void execute_sknp_v(const opcode::Instruction& instruction);
+
+        // [Fx07] Set vX to the delay timer's value. VF is not affected.
+        void execute_ld_v_dt(const opcode::Instruction& instruction);
 
         // [Fx15] Set delay timer to vX. VF is not affected.
         void execute_ld_dt_v(const opcode::Instruction& instruction);
