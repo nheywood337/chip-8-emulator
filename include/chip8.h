@@ -46,6 +46,7 @@ class chip8 {
         uint8_t sound_timer = 0;                            // sound timer
         std::array<uint8_t, 16> keypad = {};                // keypad state
         std::array<uint8_t, DISPLAY_WIDTH * DISPLAY_HEIGHT> display = {}; // display buffer
+        bool is_running = true;                                      // main loop control
         
         // for random number generation
         std::mt19937 rng{std::random_device{}()}; 
