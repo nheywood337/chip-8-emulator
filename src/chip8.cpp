@@ -54,7 +54,7 @@ void chip8::execute(const opcode::Instruction& instruction) {
         case opcode::Opcode::LD_I_ADDR: execute_ld_i_addr(instruction); break;
         case opcode::Opcode::JP_V_ADDR: execute_jp_v_addr(instruction); break;
         case opcode::Opcode::RND_V_B:   execute_rnd_v_b(instruction);   break;
-        case opcode::Opcode::DRW_V_V:   execute_drw_v_v_n(instruction); break;
+        case opcode::Opcode::DRW_V_V:   execute_drw_v_v(instruction);   break;
 
         default: throw chip8_error("[chip8]: opcode invalid or not supported yet: " + disassembler::instruction_to_string(instruction));
     }
@@ -229,32 +229,52 @@ void chip8::execute_rnd_v_b(const opcode::Instruction& instruction) {
 }
 
 // [Dxyn] draw sprite at (vX, vY) with height N, VF = collision
-void chip8::execute_drw_v_v_n(const opcode::Instruction& instruction) {
-    uint8_t x = this->get_register(instruction.x) % DISPLAY_WIDTH;
-    uint8_t y = this->get_register(instruction.y) % DISPLAY_HEIGHT;
+void chip8::execute_drw_v_v(const opcode::Instruction& instruction) {
+    uint8_t start_x = this->get_register(instruction.x) % DISPLAY_WIDTH;
+    uint8_t start_y = this->get_register(instruction.y) % DISPLAY_HEIGHT;
     uint8_t height = instruction.n;
 
     bool collision = false;
 
-    for (uint8_t row = 0; row < height; row++) {
-        uint8_t sprite_byte = this->memory.at(this->I + row);
+    try {
+        for (uint8_t row = 0; row < height; row++) {
+            uint8_t current_y = start_y + row;
+            // CHIP-8 clipping: stop drawing rows that exceed bottom boundary
+            if (current_y >= DISPLAY_HEIGHT) {
+                break; 
+            }
 
-        for (uint8_t col = 0; col < 8; col++) {
-            if ((sprite_byte & (0x80 >> col)) != 0) { // Check if the bit is set
-                uint16_t pixel_index = ((y + row) % DISPLAY_HEIGHT) * DISPLAY_WIDTH + ((x + col) % DISPLAY_WIDTH);
-                if (this->display.at(pixel_index)) {
-                    collision = true; // Collision detected
+            uint8_t sprite_byte = this->memory.at(this->I + row);
+            
+            for (uint8_t col = 0; col < 8; col++) {
+                uint8_t current_x = start_x + col;
+                // CHIP-8 clipping: skip pixels that exceed right boundary
+                if (current_x >= DISPLAY_WIDTH) {
+                    break;
                 }
-                this->display.at(pixel_index) ^= 1; // XOR the pixel
+
+                if ((sprite_byte & (0x80 >> col)) != 0) {
+                    uint16_t pixel_index = current_y * DISPLAY_WIDTH + current_x;
+                    if (this->display.at(pixel_index)) {
+                        collision = true;
+                    }
+                    this->display.at(pixel_index) ^= 1;
+                }
             }
         }
+        v_registers.at(VF) = collision;
     }
-
-    this->v_registers.at(VF) = collision ? 1 : 0;
+    catch (const std::out_of_range& e) {
+        throw chip8_error(std::string("[chip8]: read out of range: ") + e.what());
+    }
 }
 
 
 // ----- Helpers for tests -----
+const std::array<uint8_t, DISPLAY_WIDTH * DISPLAY_HEIGHT>& chip8::get_display() const {
+    return this->display;
+}
+
 uint16_t chip8::get_program_counter() const {
     return this->program_counter;
 }

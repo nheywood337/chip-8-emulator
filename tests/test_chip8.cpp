@@ -689,3 +689,53 @@ TEST_F(Chip8Test, ExecuteRND_V_B) {
     vm.execute(opcode::decode(vm.fetch()));
     EXPECT_EQ(vm.get_register(0x1) & 0x0F, vm.get_register(0x1));
 }
+
+TEST_F(Chip8Test, ExecuteDRW_DrawsSpriteToDisplay) {
+    // 0x200: 0x6100 -> Set V1 = 0
+    // 0x202: 0x6200 -> Set V2 = 0
+    // 0x204: 0xA208 -> Set I = 0x208 (Sprite location)
+    // 0x206: 0xD121 -> Draw 1-byte sprite at (V1, V2)
+    // 0x208: 0xA0   -> Sprite Data (0b10100000)
+    std::vector<uint8_t> rom = {
+        0x61, 0x00, // 0x200
+        0x62, 0x00, // 0x202
+        0xA2, 0x08, // 0x204 (Points to 0x208)
+        0xD1, 0x21, // 0x206
+        0xA0        // 0x208 (Sprite data)
+    };
+    chip8 vm(rom);
+
+    for (int i = 0; i < 4; ++i) {
+        vm.execute(opcode::decode(vm.fetch()));
+    }
+
+    const auto& display = vm.get_display();
+    EXPECT_EQ(display.at(0), 1); // Col 0: ON
+    EXPECT_EQ(display.at(1), 0); // Col 1: OFF
+    EXPECT_EQ(display.at(2), 1); // Col 2: ON
+    EXPECT_EQ(vm.get_register(VF), 0); // No collision
+}
+
+TEST_F(Chip8Test, ExecuteDRW_DetectsCollisionAndTogglesPixelsOff) {
+    // Draw same 1-byte sprite (0b10000000) twice at (0,0)
+    std::vector<uint8_t> rom = {
+        0x61, 0x00,
+        0x62, 0x00,
+        0xA2, 0x08,
+        0xD1, 0x21, // First draw: turns pixel ON
+        0xD1, 0x21, // Second draw: XOR toggles pixel OFF -> Collision!
+        0x00, 0x00,
+        0x80        // Sprite at offset 0x208
+    };
+    chip8 vm(rom);
+
+    // Run setup and first draw
+    for (int i = 0; i < 4; ++i) vm.execute(opcode::decode(vm.fetch()));
+    EXPECT_EQ(vm.get_display().at(0), 1);
+    EXPECT_EQ(vm.get_register(VF), 0);
+
+    // Second draw
+    vm.execute(opcode::decode(vm.fetch()));
+    EXPECT_EQ(vm.get_display().at(0), 0); // Toggled off
+    EXPECT_EQ(vm.get_register(VF), 1); // Collision set
+}

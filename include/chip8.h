@@ -24,6 +24,7 @@ class chip8 {
         uint16_t get_program_counter() const;
         uint8_t get_register(uint8_t index) const;
         uint16_t get_I() const;
+        const std::array<uint8_t, DISPLAY_WIDTH * DISPLAY_HEIGHT>& get_display() const;
 
     private:
         std::array<uint8_t, MEMORY_SIZE> memory = {};       // fixed memory size 4096
@@ -106,5 +107,5 @@ class chip8 {
         void execute_rnd_v_b(const opcode::Instruction& instruction);
 
         // [Dxyn] draw sprite at (vX, vY) with height N, VF = collision
-        void execute_drw_v_v_n(const opcode::Instruction& instruction);
+        void execute_drw_v_v(const opcode::Instruction& instruction);
 };
