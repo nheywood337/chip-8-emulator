@@ -33,6 +33,7 @@ uint16_t chip8::fetch() {
 // Main execution dispatcher
 void chip8::execute(const opcode::Instruction& instruction) {
     switch (instruction.opcode) {
+        case opcode::Opcode::CLS:       execute_cls();                  break;
         case opcode::Opcode::RET:       execute_ret();                  break;
         case opcode::Opcode::JP_ADDR:   execute_jp_addr(instruction);   break;
         case opcode::Opcode::CALL_ADDR: execute_call_addr(instruction); break;
@@ -61,6 +62,10 @@ void chip8::execute(const opcode::Instruction& instruction) {
 }
 
 // ----- Executors -----
+// [00E0] clear the screen
+void chip8::execute_cls() {
+    this->display.fill(0);
+}
 
 // [00EE] returns from subroutine to address pulled from stack
 void chip8::execute_ret() {

@@ -657,3 +657,29 @@ TEST_F(Chip8Test, ExecuteDRW_DetectsCollisionAndTogglesPixelsOff) {
     EXPECT_EQ(vm.get_display().at(0), 0);
     EXPECT_EQ(vm.get_register(VF), 1);
 }
+
+TEST_F(Chip8Test, ExecuteCLS) {
+    std::vector<uint8_t> rom = {
+        0x61, 0x00,
+        0x62, 0x00,
+        0xA2, 0x0A,
+        0xD1, 0x21,
+        0x00, 0xE0,
+        0x80
+    };
+    chip8 vm(rom);
+
+    // Draw the pixel first
+    for (int i = 0; i < 4; ++i) {
+        vm.execute(opcode::decode(vm.fetch()));
+    }
+    EXPECT_EQ(vm.get_display().at(0), 1);
+
+    // Execute CLS
+    vm.execute(opcode::decode(vm.fetch()));
+
+    // Verify all screen pixels are cleared
+    for (const auto& pixel : vm.get_display()) {
+        EXPECT_EQ(pixel, 0);
+    }
+}

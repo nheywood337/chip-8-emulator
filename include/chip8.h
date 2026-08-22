@@ -42,6 +42,8 @@ class chip8 {
         
 
         // ----- execution functions -----
+        // [00E0] clear the screen
+        void execute_cls();
 
         // [00EE] returns from subroutine to address pulled from stack
         void execute_ret();
@@ -108,4 +110,5 @@ class chip8 {
 
         // [Dxyn] draw sprite at (vX, vY) with height N, VF = collision
         void execute_drw_v_v(const opcode::Instruction& instruction);
+
 };
