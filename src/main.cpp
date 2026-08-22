@@ -50,7 +50,7 @@ int main(int argc, char* argv[]) {
     if (mode == MODE::RUN) {
         try {
             chip8 chip(*result);
-            // chip.run(); // Run the emulator loop
+            chip.run(); // Run the emulator loop
         }
         catch (const chip8_error& e) {
             std::cerr << e.what() << std::endl;
