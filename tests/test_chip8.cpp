@@ -830,10 +830,80 @@ TEST_F(Chip8Test, ExecuteLD_V_DT_DoesNotModifyVF) {
     EXPECT_EQ(vm.get_register(VF), 0xFF); // VF shouldn't change
 }
 
-// 8XY1 (VF is not an operand, but the COSMAC VIP quirk still resets it)
+// FX0A
+// ----------------------------------------------------------------------------
+
+TEST_F(Chip8Test, ExecuteLD_V_K_BlocksWhenNoKeyIsPressed) {
+    std::vector<uint8_t> rom = {0xF1, 0x0A}; // LD V1, K
+    chip8 vm(rom);
+
+    // no key down: PC shouldn't advance
+    vm.execute(opcode::decode(vm.fetch()));
+    EXPECT_EQ(vm.get_program_counter(), 0x0200);
+
+    // still nothing pressed: same instruction re-fetched
+    vm.execute(opcode::decode(vm.fetch()));
+    EXPECT_EQ(vm.get_program_counter(), 0x0200);
+    EXPECT_EQ(vm.get_register(0x1), 0x00);
+}
+
+TEST_F(Chip8Test, ExecuteLD_V_K_BlocksWhileKeyIsHeldDown) {
+    std::vector<uint8_t> rom = {0xF1, 0x0A}; // LD V1, K
+    chip8 vm(rom);
+
+    vm.execute(opcode::decode(vm.fetch())); // no key yet: still blocked
+
+    // key down: latched, still blocked until release
+    vm.set_keypad_state(0x5, true);
+    vm.execute(opcode::decode(vm.fetch()));
+    EXPECT_EQ(vm.get_program_counter(), 0x0200);
+    EXPECT_EQ(vm.get_register(0x1), 0x00);
+
+    // holding it longer changes nothing
+    vm.execute(opcode::decode(vm.fetch()));
+    EXPECT_EQ(vm.get_program_counter(), 0x0200);
+}
+
+TEST_F(Chip8Test, ExecuteLD_V_K_CompletesOnKeyRelease) {
+    std::vector<uint8_t> rom = {0xF1, 0x0A, 0x00, 0xE0}; // LD V1, K ; CLS
+    chip8 vm(rom);
+
+    vm.execute(opcode::decode(vm.fetch())); // no key yet: still blocked
+
+    vm.set_keypad_state(0x5, true);
+    vm.execute(opcode::decode(vm.fetch())); // key down: still blocked
+
+    vm.set_keypad_state(0x5, false);
+    vm.execute(opcode::decode(vm.fetch())); // key released: unblocks
+
+    EXPECT_EQ(vm.get_register(0x1), 0x5);
+    EXPECT_EQ(vm.get_program_counter(), 0x0202);
+
+    // PC actually advanced now
+    vm.execute(opcode::decode(vm.fetch()));
+    EXPECT_EQ(vm.get_program_counter(), 0x0204);
+}
+
+TEST_F(Chip8Test, ExecuteLD_V_K_PicksLowestIndexedKeyWhenMultiplePressed) {
+    std::vector<uint8_t> rom = {0xF1, 0x0A}; // LD V1, K
+    chip8 vm(rom);
+
+    vm.set_keypad_state(0x9, true);
+    vm.set_keypad_state(0x3, true);
+    vm.execute(opcode::decode(vm.fetch())); // latches key 0x3 (lowest index)
+
+    vm.set_keypad_state(0x9, false);
+    vm.set_keypad_state(0x3, false);
+    vm.execute(opcode::decode(vm.fetch())); // latched key released: unblocks
+
+    EXPECT_EQ(vm.get_register(0x1), 0x3);
+    EXPECT_EQ(vm.get_program_counter(), 0x0202);
+}
+
+// 8XY1 (VF not an operand, quirk still resets it)
 TEST_F(Chip8Test, ExecuteOR_V_V_QuirkResetsVFEvenWhenNotOperand) {
     std::vector<uint8_t> rom = {
-        0x6F, 0xAB, // VF = 0xAB (nonzero, and not involved in the OR below)
+        0x6F, 0xAB, // VF = 0xAB
         0x61, 0xF0, // V1 = 0xF0
         0x62, 0x0F, // V2 = 0x0F
         0x81, 0x21  // V1 |= V2
@@ -846,15 +916,14 @@ TEST_F(Chip8Test, ExecuteOR_V_V_QuirkResetsVFEvenWhenNotOperand) {
     vm.execute(opcode::decode(vm.fetch())); // V1 |= V2
 
     EXPECT_EQ(vm.get_register(0x1), 0xFF);
-    // VF was nonzero and not a source operand, so if this reads 0 it's
-    // because of the unconditional COSMAC VIP reset, not a coincidence.
+    // VF wasn't an operand, so a 0 here is the quirk, not a default value
     EXPECT_EQ(vm.get_register(VF), 0x00);
 }
 
-// [8XY3] (VF is not an operand, but the COSMAC VIP quirk still resets it)
+// [8XY3] (VF not an operand, quirk still resets it)
 TEST_F(Chip8Test, ExecuteXOR_V_V_QuirkResetsVFEvenWhenNotOperand) {
     std::vector<uint8_t> rom = {
-        0x6F, 0xAB, // VF = 0xAB (nonzero, and not involved in the XOR below)
+        0x6F, 0xAB, // VF = 0xAB
         0x61, 0xF0, // V1 = 0xF0
         0x62, 0x0F, // V2 = 0x0F
         0x81, 0x23  // V1 ^= V2
@@ -867,8 +936,7 @@ TEST_F(Chip8Test, ExecuteXOR_V_V_QuirkResetsVFEvenWhenNotOperand) {
     vm.execute(opcode::decode(vm.fetch())); // V1 ^= V2
 
     EXPECT_EQ(vm.get_register(0x1), 0xF0 ^ 0x0F);
-    // VF was nonzero and not a source operand, so if this reads 0 it's
-    // because of the unconditional COSMAC VIP reset, not a coincidence.
+    // VF wasn't an operand, so a 0 here is the quirk, not a default value
     EXPECT_EQ(vm.get_register(VF), 0x00);
 }
 
@@ -896,7 +964,7 @@ TEST_F(Chip8Test, ExecuteLD_F_V_PointsAtCorrectDigitSprite) {
 
 TEST_F(Chip8Test, ExecuteLD_F_V_MasksRegisterToLowNibble) {
     std::vector<uint8_t> rom = {
-        0x60, 0xFF, // V0 = 0xFF; only the low nibble (0xF) should select the glyph
+        0x60, 0xFF, // V0 = 0xFF (low nibble 0xF)
         0xF0, 0x29
     };
     chip8 vm(rom);
@@ -933,8 +1001,8 @@ TEST_F(Chip8Test, ExecuteLD_B_V_StoresBCDDigits) {
 
 TEST_F(Chip8Test, ExecuteLD_B_V_ThrowsChip8ErrorOnOutOfRangeWrite) {
     std::vector<uint8_t> rom = {
-        0xAF, 0xFE, // I = 0xFFE (only 2 bytes of memory remain after this)
-        0x60, 0x7B, // V0 = 123 (BCD store needs 3 bytes: I, I+1, I+2)
+        0xAF, 0xFE, // I = 0xFFE (2 bytes of memory left)
+        0x60, 0x7B, // V0 = 123 (needs 3 bytes)
         0xF0, 0x33
     };
     chip8 vm(rom);
@@ -942,7 +1010,7 @@ TEST_F(Chip8Test, ExecuteLD_B_V_ThrowsChip8ErrorOnOutOfRangeWrite) {
     vm.execute(opcode::decode(vm.fetch())); // I = 0xFFE
     vm.execute(opcode::decode(vm.fetch())); // V0 = 123
 
-    // Should raise our own chip8_error, not a raw std::out_of_range
+    // chip8_error, not a raw std::out_of_range
     EXPECT_THROW(vm.execute(opcode::decode(vm.fetch())), chip8_error);
 }
 
@@ -968,14 +1036,14 @@ TEST_F(Chip8Test, ExecuteLD_I_V_StoresRegistersToMemory) {
 
 TEST_F(Chip8Test, ExecuteLD_I_V_ThrowsChip8ErrorOnOutOfRangeWrite) {
     std::vector<uint8_t> rom = {
-        0xAF, 0xFE, // I = 0xFFE (only 2 bytes of memory remain after this)
-        0xF2, 0x55  // store V0..V2 (3 registers) - overruns memory
+        0xAF, 0xFE, // I = 0xFFE (2 bytes of memory left)
+        0xF2, 0x55  // overruns memory
     };
     chip8 vm(rom);
 
     vm.execute(opcode::decode(vm.fetch())); // I = 0xFFE
 
-    // Should raise our own chip8_error, not a raw std::out_of_range
+    // chip8_error, not a raw std::out_of_range
     EXPECT_THROW(vm.execute(opcode::decode(vm.fetch())), chip8_error);
 }
 
@@ -986,7 +1054,7 @@ TEST_F(Chip8Test, ExecuteLD_V_I_LoadsRegistersFromMemory) {
         0x61, 0x22, // V1 = 0x22
         0x62, 0x33, // V2 = 0x33
         0xF2, 0x55, // store V0..V2 at I..I+2
-        0x60, 0x00, // V0 = 0 (cleared so the read-back below is verifiable)
+        0x60, 0x00, // V0 = 0 (clear before read-back)
         0x61, 0x00, // V1 = 0
         0x62, 0x00, // V2 = 0
         0xF2, 0x65  // load V0..V2 back from I..I+2
@@ -1004,14 +1072,14 @@ TEST_F(Chip8Test, ExecuteLD_V_I_LoadsRegistersFromMemory) {
 
 TEST_F(Chip8Test, ExecuteLD_V_I_ThrowsChip8ErrorOnOutOfRangeRead) {
     std::vector<uint8_t> rom = {
-        0xAF, 0xFE, // I = 0xFFE (only 2 bytes of memory remain after this)
-        0xF2, 0x65  // load V0..V2 (3 registers) - overruns memory
+        0xAF, 0xFE, // I = 0xFFE (2 bytes of memory left)
+        0xF2, 0x65  // overruns memory
     };
     chip8 vm(rom);
 
     vm.execute(opcode::decode(vm.fetch())); // I = 0xFFE
 
-    // Should raise our own chip8_error, not a raw std::out_of_range
+    // chip8_error, not a raw std::out_of_range
     EXPECT_THROW(vm.execute(opcode::decode(vm.fetch())), chip8_error);
 }
 
@@ -1020,14 +1088,14 @@ TEST_F(Chip8Test, ConstructorLoadsFontSetWithoutClobberingRomArea) {
     chip8 vm(rom);
 
     const auto& memory = vm.get_memory();
-    // Digit '0' sprite lives at the very start of memory.
+    // digit '0' sprite
     EXPECT_EQ(memory.at(0), 0xF0);
     EXPECT_EQ(memory.at(1), 0x90);
     EXPECT_EQ(memory.at(2), 0x90);
     EXPECT_EQ(memory.at(3), 0x90);
     EXPECT_EQ(memory.at(4), 0xF0);
 
-    // Font data must not spill into the ROM's load area at 0x200.
+    // font data shouldn't spill into the ROM area
     EXPECT_EQ(memory.at(START_ADDRESS_OFFSET), 0x00);
     EXPECT_EQ(memory.at(START_ADDRESS_OFFSET + 1), 0xE0);
 }

@@ -29,8 +29,7 @@ namespace {
 }
 
 chip8::chip8(const std::vector<uint8_t>& byte_stream) {
-    // Load the built-in hex-digit sprites first, before any ROM data, so
-    // [Fx29] always points at real glyph bytes regardless of what loads next.
+    // Load font sprites before the ROM so Fx29 has real data to point at
     std::copy(FONT_SET.begin(), FONT_SET.end(), memory.begin() + FONT_START_ADDRESS);
 
     // Guard for a ROM that's too large for our buffer
@@ -121,6 +120,7 @@ void chip8::execute(const opcode::Instruction& instruction) {
         case opcode::Opcode::SKNP_V:    execute_sknp_v(instruction);    break;
         case opcode::Opcode::ADD_I_V:   execute_add_i_v(instruction);   break;
         case opcode::Opcode::LD_V_DT:   execute_ld_v_dt(instruction);   break;
+        case opcode::Opcode::LD_V_K:    execute_ld_v_k(instruction);    break;
         case opcode::Opcode::LD_DT_V:   execute_ld_dt_v(instruction);   break;
         case opcode::Opcode::LD_ST_V:   execute_ld_st_v(instruction);   break;
         case opcode::Opcode::LD_F_V:    execute_ld_f_v(instruction);    break;
@@ -128,7 +128,7 @@ void chip8::execute(const opcode::Instruction& instruction) {
         case opcode::Opcode::LD_I_V:    execute_ld_i_v(instruction);    break;
         case opcode::Opcode::LD_V_I:    execute_ld_v_i(instruction);    break;
 
-        // opcode::Opcode::INVALID and any other unhandled value fall through here.
+        // INVALID falls through to default too
         default: throw chip8_error("[chip8]: opcode invalid or not supported yet: " + disassembler::instruction_to_string(instruction));
     }
 }
@@ -370,6 +370,33 @@ void chip8::execute_add_i_v(const opcode::Instruction& instruction) {
 // [Fx07] Set Vx to the value of the delay timer. VF is not affected.
 void chip8::execute_ld_v_dt(const opcode::Instruction& instruction) {
     this->v_registers.at(instruction.x) = this->delay_timer;
+}
+
+// [Fx0A] Block until a key is pressed then released; store its index in vX.
+// "Blocking" = rewind PC by 2 so fetch() re-reads this same instruction.
+void chip8::execute_ld_v_k(const opcode::Instruction& instruction) {
+    if (!this->waiting_for_key_release) {
+        // look for a pressed key to latch onto
+        for (uint8_t k = 0; k < 16; ++k) {
+            if (this->keypad.at(k)) {
+                this->pressed_key = k;
+                this->waiting_for_key_release = true;
+                break;
+            }
+        }
+        this->program_counter -= 2;
+        return;
+    }
+
+    if (this->keypad.at(this->pressed_key)) {
+        // still held, keep waiting
+        this->program_counter -= 2;
+        return;
+    }
+
+    // released: store it and unblock
+    this->v_registers.at(instruction.x) = this->pressed_key;
+    this->waiting_for_key_release = false;
 }
 
 // [Fx15] Set delay timer to vX. VF is not affected.

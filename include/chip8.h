@@ -47,6 +47,10 @@ class chip8 {
         uint8_t sound_timer = 0;                            // sound timer
         std::array<uint8_t, 16> keypad = {};                // keypad state
         std::array<uint8_t, DISPLAY_WIDTH * DISPLAY_HEIGHT> display = {}; // display buffer
+
+        // Fx0A state: latched key we're waiting to see released
+        bool waiting_for_key_release = false;
+        uint8_t pressed_key = 0;
         
         // for random number generation
         std::mt19937 rng{std::random_device{}()}; 
@@ -131,6 +135,9 @@ class chip8 {
 
         // [Fx07] Set vX to the delay timer's value. VF is not affected.
         void execute_ld_v_dt(const opcode::Instruction& instruction);
+
+        // [Fx0A] Block until a key is pressed then released; store its index in vX.
+        void execute_ld_v_k(const opcode::Instruction& instruction);
 
         // [Fx15] Set delay timer to vX. VF is not affected.
         void execute_ld_dt_v(const opcode::Instruction& instruction);
