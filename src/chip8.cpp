@@ -67,6 +67,10 @@ void chip8::execute(const opcode::Instruction& instruction) {
         case opcode::Opcode::DRW_V_V:   execute_drw_v_v(instruction);   break;
         case opcode::Opcode::SKP_V:     execute_skp_v(instruction);     break;
         case opcode::Opcode::SKNP_V:    execute_sknp_v(instruction);    break;
+        case opcode::Opcode::ADD_I_V:   execute_add_i_v(instruction);   break;
+        case opcode::Opcode::LD_DT_V:   execute_ld_dt_v(instruction);   break;
+        case opcode::Opcode::LD_ST_V:   execute_ld_st_v(instruction);   break;
+        
 
         default: throw chip8_error("[chip8]: opcode invalid or not supported yet: " + disassembler::instruction_to_string(instruction));
     }
@@ -301,6 +305,20 @@ void chip8::execute_sknp_v(const opcode::Instruction& instruction) {
     }
 }
 
+// [Fx1E] Add Vx to I. VF is not affected.
+void chip8::execute_add_i_v(const opcode::Instruction& instruction) {
+    this->I += this->get_register(instruction.x);
+}
+
+// [Fx15] Set delay timer to vX. VF is not affected.
+void chip8::execute_ld_dt_v(const opcode::Instruction& instruction) {
+    this->delay_timer = this->get_register(instruction.x);
+}
+
+// [Fx18] Set sound timer to vX. VF is not affected.
+void chip8::execute_ld_st_v(const opcode::Instruction& instruction) {
+    this->sound_timer = this->get_register(instruction.x);
+}
 
 
 // ----- Helpers for tests -----
@@ -329,4 +347,20 @@ void chip8::set_keypad_state(uint8_t key, bool pressed) {
         throw chip8_error("[chip8]: set_keypad_state - key index out of bounds!");
     }
     this->keypad.at(key) = pressed;
+}
+
+void chip8::set_delay_timer(uint8_t value) {
+    this->delay_timer = value;
+}
+
+void chip8::set_sound_timer(uint8_t value) {
+    this->sound_timer = value;
+}
+
+uint8_t chip8::get_delay_timer() const {
+    return this->delay_timer;
+}
+
+uint8_t chip8::get_sound_timer() const {
+    return this->sound_timer;
 }

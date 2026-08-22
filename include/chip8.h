@@ -28,7 +28,11 @@ class chip8 {
         uint16_t get_I() const;
         const std::array<uint8_t, DISPLAY_WIDTH * DISPLAY_HEIGHT>& get_display() const;
         const std::array<uint8_t, 16>& get_keypad() const;
+        uint8_t get_delay_timer() const;
+        uint8_t get_sound_timer() const;
         void set_keypad_state(uint8_t key, bool pressed);
+        void set_delay_timer(uint8_t value);
+        void set_sound_timer(uint8_t value);
 
     private:
         std::array<uint8_t, MEMORY_SIZE> memory = {};       // fixed memory size 4096
@@ -38,6 +42,8 @@ class chip8 {
         uint8_t stack_pointer = 0;                          // pointer to next free slot on stack
         uint16_t I = 0;                                     // I
 
+        uint8_t delay_timer = 0;                            // delay timer
+        uint8_t sound_timer = 0;                            // sound timer
         std::array<uint8_t, 16> keypad = {};                // keypad state
         std::array<uint8_t, DISPLAY_WIDTH * DISPLAY_HEIGHT> display = {}; // display buffer
         
@@ -121,5 +127,14 @@ class chip8 {
 
         // [ExA1] skip next opcode if key in vX is NOT pressed
         void execute_sknp_v(const opcode::Instruction& instruction);
+
+        // [Fx15] Set delay timer to vX. VF is not affected.
+        void execute_ld_dt_v(const opcode::Instruction& instruction);
+
+        // [Fx18] Set sound timer to vX. VF is not affected.
+        void execute_ld_st_v(const opcode::Instruction& instruction);
+
+        // [Fx1E] add vX to I
+        void execute_add_i_v(const opcode::Instruction& instruction);
 
 };

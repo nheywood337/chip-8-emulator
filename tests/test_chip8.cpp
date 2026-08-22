@@ -754,3 +754,45 @@ TEST_F(Chip8Test, ExecuteSKNP_V_SafelyMasksRegisterOutOfBounds) {
     EXPECT_NO_THROW(vm.execute(opcode::decode(vm.fetch())));
     EXPECT_EQ(vm.get_program_counter(), 0x0206);
 }
+
+TEST_F(Chip8Test, ExecuteLD_DT_V_DoesNotModifyVF) {
+    std::vector<uint8_t> rom = {
+        0x6F, 0xF0,
+        0x61, 0x05,
+        0xF1, 0x15
+    };
+    chip8 vm(rom);
+
+    vm.execute(opcode::decode(vm.fetch())); // VF = 0xF0
+    vm.execute(opcode::decode(vm.fetch())); // V1 = 0x05
+    vm.execute(opcode::decode(vm.fetch())); // DT = V1
+
+    EXPECT_EQ(vm.get_delay_timer(), 0x05);
+    EXPECT_EQ(vm.get_register(VF), 0xF0); // VF shouldn't change
+}
+
+TEST_F(Chip8Test, ExecuteLD_ST_V_SetsSoundTimer) {
+    std::vector<uint8_t> rom = {0x62, 0xFF, 0xF2, 0x18};
+    chip8 vm(rom);
+
+    vm.execute(opcode::decode(vm.fetch())); // V2 = 0xFF
+    vm.execute(opcode::decode(vm.fetch())); // ST = V2
+
+    EXPECT_EQ(vm.get_sound_timer(), 0xFF);
+}
+
+TEST_F(Chip8Test, ExecuteLD_ST_V_DoesNotModifyVF) {
+    std::vector<uint8_t> rom = {
+        0x6F, 0xF0,
+        0x62, 0x00,
+        0xF2, 0x18
+    };
+    chip8 vm(rom);
+
+    vm.execute(opcode::decode(vm.fetch())); // VF = 0xF0
+    vm.execute(opcode::decode(vm.fetch())); // V2 = 0x00
+    vm.execute(opcode::decode(vm.fetch())); // ST = V2
+
+    EXPECT_EQ(vm.get_sound_timer(), 0x00);
+    EXPECT_EQ(vm.get_register(VF), 0xF0); // VF shouldn't change
+}
