@@ -659,3 +659,13 @@ TEST_F(Chip8Test, ExecuteSHL_V_TargetIsVF) {
 
     EXPECT_EQ(vm.get_register(VF), 1);
 }
+
+TEST_F(Chip8Test, ExecuteLD_I_ADDR) {
+    // 0x6F85 -> VF = 0x85 (1000 0101)
+    std::vector<uint8_t> rom = {0xA1, 0x11};
+    chip8 vm(rom);
+
+    vm.execute(opcode::decode(vm.fetch()));
+
+    EXPECT_EQ(vm.get_I(), 0x111);
+}

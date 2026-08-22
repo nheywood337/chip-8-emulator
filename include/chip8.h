@@ -22,6 +22,7 @@ class chip8 {
         // getters for tests
         uint16_t get_program_counter() const;
         uint8_t get_register(uint8_t index) const;
+        uint16_t get_I() const;
 
     private:
         std::array<uint8_t, MEMORY_SIZE> memory = {};       // fixed memory size 4096
@@ -29,6 +30,7 @@ class chip8 {
         std::array<uint8_t, 16> v_registers = {};           // Vx
         std::array<uint16_t, 16> stack = {};                // stack
         uint8_t stack_pointer = 0;                          // pointer to next free slot on stack
+        uint16_t I = 0;                                     // I
         
 
         // ----- execution functions -----
@@ -86,4 +88,7 @@ class chip8 {
 
         // [9xy0] skip next opcode if vX != vY
         void execute_sne_v_v(const opcode::Instruction& instruction);
+
+        // [Annn] set I to NNN
+        void execute_ld_i_addr(const opcode::Instruction& instruction);
 };

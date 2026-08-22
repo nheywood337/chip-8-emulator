@@ -51,6 +51,7 @@ void chip8::execute(const opcode::Instruction& instruction) {
         case opcode::Opcode::SUBN_V_V:  execute_subn_v_v(instruction);  break;
         case opcode::Opcode::SHL_V:     execute_shl_v(instruction);     break;
         case opcode::Opcode::SNE_V_V:   execute_sne_v_v(instruction);   break;
+        case opcode::Opcode::LD_I_ADDR: execute_ld_i_addr(instruction); break;
 
         default: throw chip8_error("[chip8]: opcode invalid or not supported yet: " + disassembler::instruction_to_string(instruction));
     }
@@ -208,6 +209,11 @@ void chip8::execute_sne_v_v(const opcode::Instruction& instruction) {
     }
 }
 
+// [Annn] set I to NNN
+void chip8::execute_ld_i_addr(const opcode::Instruction& instruction) {
+    this->I = instruction.nnn;
+}
+
 
 // ----- Helpers for tests -----
 uint16_t chip8::get_program_counter() const {
@@ -215,10 +221,9 @@ uint16_t chip8::get_program_counter() const {
 }
 
 uint8_t chip8::get_register(uint8_t index) const {
-    try {
-        return this->v_registers.at(index);
-    }
-    catch (const std::out_of_range& e) {
-        throw chip8_error(std::string("[chip8]: register out of bounds: ") + e.what());
-    }
+    return this->v_registers.at(index);
+}
+
+uint16_t chip8::get_I() const {
+    return this->I;
 }
