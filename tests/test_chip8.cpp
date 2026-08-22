@@ -683,3 +683,29 @@ TEST_F(Chip8Test, ExecuteCLS) {
         EXPECT_EQ(pixel, 0);
     }
 }
+
+TEST_F(Chip8Test, ExecuteSKP_V_KeyIsPressed_SkipsNextInstruction)
+{
+    std::vector<uint8_t> rom = {0x61, 0x05, 0xE1, 0x9E};
+    chip8 vm(rom);
+
+    vm.execute(opcode::decode(vm.fetch()));
+    vm.set_keypad_state(5, true);
+
+    vm.execute(opcode::decode(vm.fetch()));
+
+    EXPECT_EQ(vm.get_program_counter(), 0x0206);
+}
+
+TEST_F(Chip8Test, ExecuteSKNP_V_KeyNotPressed_SkipsNextInstruction)
+{
+    std::vector<uint8_t> rom = {0x61, 0x05, 0xE1, 0xA1};
+    chip8 vm(rom);
+
+    vm.execute(opcode::decode(vm.fetch()));
+    vm.set_keypad_state(5, false);
+
+    vm.execute(opcode::decode(vm.fetch()));
+
+    EXPECT_EQ(vm.get_program_counter(), 0x0206);
+}

@@ -25,6 +25,8 @@ class chip8 {
         uint8_t get_register(uint8_t index) const;
         uint16_t get_I() const;
         const std::array<uint8_t, DISPLAY_WIDTH * DISPLAY_HEIGHT>& get_display() const;
+        const std::array<uint8_t, 16>& get_keypad() const;
+        void set_keypad_state(uint8_t key, bool pressed);
 
     private:
         std::array<uint8_t, MEMORY_SIZE> memory = {};       // fixed memory size 4096
@@ -34,6 +36,7 @@ class chip8 {
         uint8_t stack_pointer = 0;                          // pointer to next free slot on stack
         uint16_t I = 0;                                     // I
 
+        std::array<uint8_t, 16> keypad = {};                // keypad state
         std::array<uint8_t, DISPLAY_WIDTH * DISPLAY_HEIGHT> display = {}; // display buffer
         
         // for random number generation
@@ -110,5 +113,11 @@ class chip8 {
 
         // [Dxyn] draw sprite at (vX, vY) with height N, VF = collision
         void execute_drw_v_v(const opcode::Instruction& instruction);
+
+        // [Ex9E] skip next opcode if key in vX is pressed
+        void execute_skp_v(const opcode::Instruction& instruction);
+
+        // [ExA1] skip next opcode if key in vX is NOT pressed
+        void execute_sknp_v(const opcode::Instruction& instruction);
 
 };

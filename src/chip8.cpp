@@ -33,6 +33,7 @@ uint16_t chip8::fetch() {
 // Main execution dispatcher
 void chip8::execute(const opcode::Instruction& instruction) {
     switch (instruction.opcode) {
+        case opcode::Opcode::SYS_ADDR: break; // Not implemented
         case opcode::Opcode::CLS:       execute_cls();                  break;
         case opcode::Opcode::RET:       execute_ret();                  break;
         case opcode::Opcode::JP_ADDR:   execute_jp_addr(instruction);   break;
@@ -56,6 +57,8 @@ void chip8::execute(const opcode::Instruction& instruction) {
         case opcode::Opcode::JP_V_ADDR: execute_jp_v_addr(instruction); break;
         case opcode::Opcode::RND_V_B:   execute_rnd_v_b(instruction);   break;
         case opcode::Opcode::DRW_V_V:   execute_drw_v_v(instruction);   break;
+        case opcode::Opcode::SKP_V:     execute_skp_v(instruction);     break;
+        case opcode::Opcode::SKNP_V:    execute_sknp_v(instruction);    break;
 
         default: throw chip8_error("[chip8]: opcode invalid or not supported yet: " + disassembler::instruction_to_string(instruction));
     }
@@ -274,6 +277,19 @@ void chip8::execute_drw_v_v(const opcode::Instruction& instruction) {
     }
 }
 
+void chip8::execute_skp_v(const opcode::Instruction& instruction) {
+    if (this->keypad.at(this->v_registers.at(instruction.x))) {
+        this->program_counter += 2;
+    }
+}
+
+void chip8::execute_sknp_v(const opcode::Instruction& instruction) {
+    if (!this->keypad.at(this->v_registers.at(instruction.x))) {
+        this->program_counter += 2;
+    }
+}
+
+
 
 // ----- Helpers for tests -----
 const std::array<uint8_t, DISPLAY_WIDTH * DISPLAY_HEIGHT>& chip8::get_display() const {
@@ -290,4 +306,15 @@ uint8_t chip8::get_register(uint8_t index) const {
 
 uint16_t chip8::get_I() const {
     return this->I;
+}
+
+const std::array<uint8_t, 16>& chip8::get_keypad() const {
+    return this->keypad;
+}
+
+void chip8::set_keypad_state(uint8_t key, bool pressed) {
+    if (key >= 16) {
+        throw chip8_error("[chip8]: set_keypad_state - key index out of bounds!");
+    }
+    this->keypad.at(key) = pressed;
 }
