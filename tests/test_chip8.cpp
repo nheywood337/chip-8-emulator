@@ -668,3 +668,16 @@ TEST_F(Chip8Test, ExecuteLD_I_ADDR) {
 
     EXPECT_EQ(vm.get_I(), 0x111);
 }
+
+// [Bnnn] jump to address NNN + v0
+TEST_F(Chip8Test, ExecuteJP_V_ADDR) {
+    // 0x600A -> V0 = 10
+    // 0xB111 -> PC = 0x0111 + V0 (177 + 10 = 187)
+    std::vector<uint8_t> rom = {0x60, 0x0A, 0xB1, 0x11};
+    chip8 vm(rom);
+
+    vm.execute(opcode::decode(vm.fetch())); // set V0 to 10
+    vm.execute(opcode::decode(vm.fetch())); // jump to 0x0111 + V0
+
+    EXPECT_EQ(vm.get_program_counter(), 0x011B); // 0x0111 + 0x000A = 0x011B (283)
+}

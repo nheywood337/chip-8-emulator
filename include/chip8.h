@@ -91,4 +91,7 @@ class chip8 {
 
         // [Annn] set I to NNN
         void execute_ld_i_addr(const opcode::Instruction& instruction);
+
+        // [Bnnn] jump to address NNN + v0
+        void execute_jp_v_addr(const opcode::Instruction& instruction);
 };

@@ -52,6 +52,7 @@ void chip8::execute(const opcode::Instruction& instruction) {
         case opcode::Opcode::SHL_V:     execute_shl_v(instruction);     break;
         case opcode::Opcode::SNE_V_V:   execute_sne_v_v(instruction);   break;
         case opcode::Opcode::LD_I_ADDR: execute_ld_i_addr(instruction); break;
+        case opcode::Opcode::JP_V_ADDR: execute_jp_v_addr(instruction); break;
 
         default: throw chip8_error("[chip8]: opcode invalid or not supported yet: " + disassembler::instruction_to_string(instruction));
     }
@@ -212,6 +213,11 @@ void chip8::execute_sne_v_v(const opcode::Instruction& instruction) {
 // [Annn] set I to NNN
 void chip8::execute_ld_i_addr(const opcode::Instruction& instruction) {
     this->I = instruction.nnn;
+}
+
+// [Bnnn] jump to address NNN + v0
+void chip8::execute_jp_v_addr(const opcode::Instruction& instruction) {
+    this->program_counter = instruction.nnn + this->get_register(0);
 }
 
 
