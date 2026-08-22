@@ -4,7 +4,7 @@
 
 class Chip8Test : public ::testing::Test {};
 
-// Setup & Memory Tests
+// Setup & Memory
 // ----------------------------------------------------------------------------
 
 TEST_F(Chip8Test, ConstructorLoadsRomAtCorrectOffset) {
@@ -87,7 +87,7 @@ TEST_F(Chip8Test, ExecuteADD_V_B) {
     opcode::Instruction instr = opcode::decode(vm.fetch());
     vm.execute(instr);
 
-    // Should wrap around to 4
+    // Wraps to 4
     instr = opcode::decode(vm.fetch());
     vm.execute(instr);
 
@@ -154,16 +154,16 @@ TEST_F(Chip8Test, NestedSubroutineCallsUnwindInLIFOOrder) {
 }
 
 TEST_F(Chip8Test, ExecuteCALL_ADDR_ThrowsOnStackOverflow) {
-    std::vector<uint8_t> rom = {0x22, 0x00}; // Recursion loop
+    std::vector<uint8_t> rom = {0x22, 0x00}; // Infinite recursion
     chip8 vm(rom);
 
-    // Max out the 16 stack frames
+    // Fill all 16 stack slots
     for (int i = 0; i < 16; ++i) {
         opcode::Instruction instr = opcode::decode(vm.fetch());
         vm.execute(instr);
     }
 
-    // 17th call should blow up
+    // 17th call should throw
     opcode::Instruction overflow_instr = opcode::decode(vm.fetch());
     EXPECT_THROW(vm.execute(overflow_instr), chip8_error);
 }
@@ -188,7 +188,7 @@ TEST_F(Chip8Test, ExecuteSE_V_B_EqualNN) {
     EXPECT_EQ(vm.get_program_counter(), pc_before_skip + 4);
 }
 
-// 3XNN (Values don't match -> don't skip)
+// 3XNN (Values differ -> don't skip)
 TEST_F(Chip8Test, ExecuteSE_V_B_NotEqualNN) {
     std::vector<uint8_t> rom = {0x61, 0x20, 0x31, 0x10};
     chip8 vm(rom);
@@ -212,7 +212,7 @@ TEST_F(Chip8Test, ExecuteSNE_V_B_EqualNN) {
     EXPECT_EQ(vm.get_program_counter(), pc_before_skip + 2);
 }
 
-// 4XNN (Values don't match -> skip)
+// 4XNN (Values differ -> skip)
 TEST_F(Chip8Test, ExecuteSNE_V_B_NotEqualNN) {
     std::vector<uint8_t> rom = {0x61, 0x20, 0x41, 0x10};
     chip8 vm(rom);
@@ -375,10 +375,10 @@ TEST_F(Chip8Test, ExecuteADD_V_V_Overflow) {
     vm.execute(opcode::decode(vm.fetch()));
     vm.execute(opcode::decode(vm.fetch()));
 
-    // 255 + 1 rolls over to 0
+    // 255 + 1 wraps to 0
     EXPECT_EQ(vm.get_register(0x1), 0x00);
 
-    // VF handles the carry bit
+    // Carry bit goes to VF
     EXPECT_EQ(vm.get_register(VF), 1);
 }
 
@@ -398,11 +398,11 @@ TEST_F(Chip8Test, ExecuteSUB_V_V_Underflow) {
     // 5 - 10 wraps to 251
     EXPECT_EQ(vm.get_register(0x1), 0xFB);
 
-    // VF = 0 means we had to borrow
+    // Borrow occurred, so VF = 0
     EXPECT_EQ(vm.get_register(VF), 0);
 }
 
-// 8FY4 (writing directly to VF)
+// 8FY4 (target is VF)
 TEST_F(Chip8Test, ExecuteADD_V_V_TargetIsVF) {
     std::vector<uint8_t> rom = {
         0x6F, 0xE0,
@@ -415,11 +415,11 @@ TEST_F(Chip8Test, ExecuteADD_V_V_TargetIsVF) {
     vm.execute(opcode::decode(vm.fetch()));
     vm.execute(opcode::decode(vm.fetch()));
 
-    // Carry check happens last, so carry bit overrides the addition result in VF
+    // Carry flag overwrites addition result
     EXPECT_EQ(vm.get_register(VF), 1);
 }
 
-// 8FY5 (writing directly to VF)
+// 8FY5 (target is VF)
 TEST_F(Chip8Test, ExecuteSUB_V_V_TargetIsVF) {
     std::vector<uint8_t> rom = {
         0x6F, 0x0A,
@@ -432,7 +432,7 @@ TEST_F(Chip8Test, ExecuteSUB_V_V_TargetIsVF) {
     vm.execute(opcode::decode(vm.fetch()));
     vm.execute(opcode::decode(vm.fetch()));
 
-    // Borrow flag gets written last, overwriting the math result in VF
+    // Borrow flag overwrites math result
     EXPECT_EQ(vm.get_register(VF), 1);
 }
 
@@ -449,7 +449,7 @@ TEST_F(Chip8Test, ExecuteOR_V_V_TargetIsVF) {
     vm.execute(opcode::decode(vm.fetch()));
     vm.execute(opcode::decode(vm.fetch()));
 
-    // Logical operations reset VF back to 0
+    // Logic ops clear VF to 0
     EXPECT_EQ(vm.get_register(VF), 0);
 }
 
@@ -466,7 +466,7 @@ TEST_F(Chip8Test, ExecuteAND_V_V_TargetIsVF) {
     vm.execute(opcode::decode(vm.fetch()));
     vm.execute(opcode::decode(vm.fetch()));
 
-    // Logical operations reset VF back to 0
+    // Logic ops clear VF to 0
     EXPECT_EQ(vm.get_register(VF), 0);
 }
 
@@ -483,11 +483,11 @@ TEST_F(Chip8Test, ExecuteXOR_V_V_TargetIsVF) {
     vm.execute(opcode::decode(vm.fetch()));
     vm.execute(opcode::decode(vm.fetch()));
 
-    // Logical operations reset VF back to 0
+    // Logic ops clear VF to 0
     EXPECT_EQ(vm.get_register(VF), 0);
 }
 
-// 8XY6 (LSB is 1)
+// 8XY6 (LSB = 1)
 TEST_F(Chip8Test, ExecuteSHR_V_LSB_One) {
     std::vector<uint8_t> rom = {
         0x62, 0x03,
@@ -502,7 +502,7 @@ TEST_F(Chip8Test, ExecuteSHR_V_LSB_One) {
     EXPECT_EQ(vm.get_register(VF), 1);
 }
 
-// 8XY6 (LSB is 0)
+// 8XY6 (LSB = 0)
 TEST_F(Chip8Test, ExecuteSHR_V_LSB_Zero) {
     std::vector<uint8_t> rom = {
         0x62, 0x04,
@@ -549,7 +549,7 @@ TEST_F(Chip8Test, ExecuteSUBN_V_V_TargetIsVF) {
     vm.execute(opcode::decode(vm.fetch()));
     vm.execute(opcode::decode(vm.fetch()));
 
-    // Borrow flag overwrites subtraction result
+    // Borrow flag overwrites math result
     EXPECT_EQ(vm.get_register(VF), 1);
 }
 
@@ -618,9 +618,9 @@ TEST_F(Chip8Test, ExecuteDRW_DrawsSpriteToDisplay) {
     std::vector<uint8_t> rom = {
         0x61, 0x00, // V1 = 0
         0x62, 0x00, // V2 = 0
-        0xA2, 0x08, // Set I to 0x208
+        0xA2, 0x08, // Set I = 0x208
         0xD1, 0x21, // Draw at (V1, V2)
-        0xA0        // Sprite data (0b10100000) stored at 0x208
+        0xA0        // Sprite data (0b10100000) at 0x208
     };
     chip8 vm(rom);
 
@@ -639,10 +639,10 @@ TEST_F(Chip8Test, ExecuteDRW_DetectsCollisionAndTogglesPixelsOff) {
     std::vector<uint8_t> rom = {
         0x61, 0x00, // V1 = 0
         0x62, 0x00, // V2 = 0
-        0xA2, 0x0A, // Set I to 0x20A
-        0xD1, 0x21, // First draw
-        0xD1, 0x21, // Second draw (XOR over same spot)
-        0x80        // Sprite data (0b10000000) stored at 0x20A
+        0xA2, 0x0A, // Set I = 0x20A
+        0xD1, 0x21, // Draw 1
+        0xD1, 0x21, // Draw 2 (XOR same pixel)
+        0x80        // Sprite data (0b10000000) at 0x20A
     };
     chip8 vm(rom);
 
@@ -652,7 +652,7 @@ TEST_F(Chip8Test, ExecuteDRW_DetectsCollisionAndTogglesPixelsOff) {
     EXPECT_EQ(vm.get_display().at(0), 1);
     EXPECT_EQ(vm.get_register(VF), 0);
 
-    // Draw second time, pixel turns off and sets collision flag
+    // Second draw turns pixel off and sets collision
     vm.execute(opcode::decode(vm.fetch()));
     EXPECT_EQ(vm.get_display().at(0), 0);
     EXPECT_EQ(vm.get_register(VF), 1);
@@ -669,43 +669,88 @@ TEST_F(Chip8Test, ExecuteCLS) {
     };
     chip8 vm(rom);
 
-    // Draw the pixel first
+    // Draw pixel
     for (int i = 0; i < 4; ++i) {
         vm.execute(opcode::decode(vm.fetch()));
     }
     EXPECT_EQ(vm.get_display().at(0), 1);
 
-    // Execute CLS
+    // Clear screen
     vm.execute(opcode::decode(vm.fetch()));
 
-    // Verify all screen pixels are cleared
+    // Make sure everything is cleared
     for (const auto& pixel : vm.get_display()) {
         EXPECT_EQ(pixel, 0);
     }
 }
 
-TEST_F(Chip8Test, ExecuteSKP_V_KeyIsPressed_SkipsNextInstruction)
-{
+// EX9E & EXA1
+// ----------------------------------------------------------------------------
+
+TEST_F(Chip8Test, ExecuteSKP_V_KeyIsPressed_SkipsNextInstruction) {
     std::vector<uint8_t> rom = {0x61, 0x05, 0xE1, 0x9E};
     chip8 vm(rom);
 
-    vm.execute(opcode::decode(vm.fetch()));
-    vm.set_keypad_state(5, true);
-
-    vm.execute(opcode::decode(vm.fetch()));
+    vm.execute(opcode::decode(vm.fetch())); // V1 = 5
+    vm.set_keypad_state(5, true);          // Key 5 pressed
+    vm.execute(opcode::decode(vm.fetch())); // SKP V1
 
     EXPECT_EQ(vm.get_program_counter(), 0x0206);
 }
 
-TEST_F(Chip8Test, ExecuteSKNP_V_KeyNotPressed_SkipsNextInstruction)
-{
+TEST_F(Chip8Test, ExecuteSKP_V_KeyNotPressed_DoesNotSkip) {
+    std::vector<uint8_t> rom = {0x61, 0x05, 0xE1, 0x9E};
+    chip8 vm(rom);
+
+    vm.execute(opcode::decode(vm.fetch())); // V1 = 5
+    vm.set_keypad_state(5, false);         // Key 5 not pressed
+    vm.execute(opcode::decode(vm.fetch())); // SKP V1
+
+    EXPECT_EQ(vm.get_program_counter(), 0x0204);
+}
+
+TEST_F(Chip8Test, ExecuteSKNP_V_KeyNotPressed_SkipsNextInstruction) {
     std::vector<uint8_t> rom = {0x61, 0x05, 0xE1, 0xA1};
     chip8 vm(rom);
 
-    vm.execute(opcode::decode(vm.fetch()));
-    vm.set_keypad_state(5, false);
+    vm.execute(opcode::decode(vm.fetch())); // V1 = 5
+    vm.set_keypad_state(5, false);         // Key 5 not pressed
+    vm.execute(opcode::decode(vm.fetch())); // SKNP V1
 
-    vm.execute(opcode::decode(vm.fetch()));
+    EXPECT_EQ(vm.get_program_counter(), 0x0206);
+}
 
+TEST_F(Chip8Test, ExecuteSKNP_V_KeyIsPressed_DoesNotSkip) {
+    std::vector<uint8_t> rom = {0x61, 0x05, 0xE1, 0xA1};
+    chip8 vm(rom);
+
+    vm.execute(opcode::decode(vm.fetch())); // V1 = 5
+    vm.set_keypad_state(5, true);          // Key 5 pressed
+    vm.execute(opcode::decode(vm.fetch())); // SKNP V1
+
+    EXPECT_EQ(vm.get_program_counter(), 0x0204);
+}
+
+TEST_F(Chip8Test, ExecuteSKP_V_SafelyMasksRegisterOutOfBounds) {
+    std::vector<uint8_t> rom = {0x61, 0xFF, 0xE1, 0x9E};
+    chip8 vm(rom);
+
+    vm.execute(opcode::decode(vm.fetch())); // V1 = 0xFF
+    vm.set_keypad_state(0xF, true);        // Press key 0xF (0xFF & 0x0F)
+
+    // Shouldn't throw out_of_range
+    EXPECT_NO_THROW(vm.execute(opcode::decode(vm.fetch())));
+    EXPECT_EQ(vm.get_program_counter(), 0x0206);
+}
+
+TEST_F(Chip8Test, ExecuteSKNP_V_SafelyMasksRegisterOutOfBounds) {
+    std::vector<uint8_t> rom = {0x61, 0xFF, 0xE1, 0xA1};
+    chip8 vm(rom);
+
+    vm.execute(opcode::decode(vm.fetch())); // V1 = 0xFF
+    vm.set_keypad_state(0xF, false);       // Key 0xF not pressed
+
+    // Shouldn't throw out_of_range
+    EXPECT_NO_THROW(vm.execute(opcode::decode(vm.fetch())));
     EXPECT_EQ(vm.get_program_counter(), 0x0206);
 }

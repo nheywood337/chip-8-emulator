@@ -277,14 +277,18 @@ void chip8::execute_drw_v_v(const opcode::Instruction& instruction) {
     }
 }
 
+// [Ex9E] Skip next instruction if key stored in Vx is pressed
 void chip8::execute_skp_v(const opcode::Instruction& instruction) {
-    if (this->keypad.at(this->v_registers.at(instruction.x))) {
+    uint8_t key = this->get_register(instruction.x) & 0x0F;
+    if (this->keypad.at(key)) {
         this->program_counter += 2;
     }
 }
 
+// [ExA1] Skip next instruction if key stored in Vx is NOT pressed
 void chip8::execute_sknp_v(const opcode::Instruction& instruction) {
-    if (!this->keypad.at(this->v_registers.at(instruction.x))) {
+    uint8_t key = this->get_register(instruction.x) & 0x0F;
+    if (!this->keypad.at(key)) {
         this->program_counter += 2;
     }
 }
