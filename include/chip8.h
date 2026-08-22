@@ -32,6 +32,10 @@ class chip8 {
         std::array<uint16_t, 16> stack = {};                // stack
         uint8_t stack_pointer = 0;                          // pointer to next free slot on stack
         uint16_t I = 0;                                     // I
+
+        std::array<uint8_t, DISPLAY_WIDTH * DISPLAY_HEIGHT> display = {}; // display buffer
+        
+        // for random number generation
         std::mt19937 rng{std::random_device{}()}; 
         std::uniform_int_distribution<uint16_t> dist{0, 255};
         
@@ -100,4 +104,7 @@ class chip8 {
 
         // [Cxnn] set vX to (random byte AND NN)
         void execute_rnd_v_b(const opcode::Instruction& instruction);
+
+        // [Dxyn] draw sprite at (vX, vY) with height N, VF = collision
+        void execute_drw_v_v_n(const opcode::Instruction& instruction);
 };

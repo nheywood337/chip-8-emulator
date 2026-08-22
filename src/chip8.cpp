@@ -3,8 +3,6 @@
 #include <fstream>
 #include <iostream>
 #include <algorithm>
-#include <cstdlib>
-#include <ctime>
 
 chip8::chip8(const std::vector<uint8_t>& byte_stream) {
     // Guard for a ROM that's too large for our buffer
@@ -56,6 +54,7 @@ void chip8::execute(const opcode::Instruction& instruction) {
         case opcode::Opcode::LD_I_ADDR: execute_ld_i_addr(instruction); break;
         case opcode::Opcode::JP_V_ADDR: execute_jp_v_addr(instruction); break;
         case opcode::Opcode::RND_V_B:   execute_rnd_v_b(instruction);   break;
+        case opcode::Opcode::DRW_V_V:   execute_drw_v_v_n(instruction); break;
 
         default: throw chip8_error("[chip8]: opcode invalid or not supported yet: " + disassembler::instruction_to_string(instruction));
     }
@@ -227,6 +226,31 @@ void chip8::execute_jp_v_addr(const opcode::Instruction& instruction) {
 void chip8::execute_rnd_v_b(const opcode::Instruction& instruction) {
     uint8_t random_byte = static_cast<uint8_t>(dist(rng)); 
     this->v_registers.at(instruction.x) = random_byte & instruction.nn;
+}
+
+// [Dxyn] draw sprite at (vX, vY) with height N, VF = collision
+void chip8::execute_drw_v_v_n(const opcode::Instruction& instruction) {
+    uint8_t x = this->get_register(instruction.x) % DISPLAY_WIDTH;
+    uint8_t y = this->get_register(instruction.y) % DISPLAY_HEIGHT;
+    uint8_t height = instruction.n;
+
+    bool collision = false;
+
+    for (uint8_t row = 0; row < height; row++) {
+        uint8_t sprite_byte = this->memory.at(this->I + row);
+
+        for (uint8_t col = 0; col < 8; ++col) {
+            if ((sprite_byte & (0x80 >> col)) != 0) { // Check if the bit is set
+                uint16_t pixel_index = ((y + row) % DISPLAY_HEIGHT) * DISPLAY_WIDTH + ((x + col) % DISPLAY_WIDTH);
+                if (this->display.at(pixel_index)) {
+                    collision = true; // Collision detected
+                }
+                this->display.at(pixel_index) ^= 1; // XOR the pixel
+            }
+        }
+    }
+
+    this->v_registers.at(VF) = collision ? 1 : 0;
 }
 
 
