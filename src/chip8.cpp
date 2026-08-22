@@ -239,7 +239,7 @@ void chip8::execute_drw_v_v_n(const opcode::Instruction& instruction) {
     for (uint8_t row = 0; row < height; row++) {
         uint8_t sprite_byte = this->memory.at(this->I + row);
 
-        for (uint8_t col = 0; col < 8; ++col) {
+        for (uint8_t col = 0; col < 8; col++) {
             if ((sprite_byte & (0x80 >> col)) != 0) { // Check if the bit is set
                 uint16_t pixel_index = ((y + row) % DISPLAY_HEIGHT) * DISPLAY_WIDTH + ((x + col) % DISPLAY_WIDTH);
                 if (this->display.at(pixel_index)) {
