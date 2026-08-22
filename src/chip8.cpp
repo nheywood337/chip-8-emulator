@@ -3,6 +3,8 @@
 #include <fstream>
 #include <iostream>
 #include <algorithm>
+#include <chrono>
+#include <thread>
 
 chip8::chip8(const std::vector<uint8_t>& byte_stream) {
     // Guard for a ROM that's too large for our buffer
@@ -20,35 +22,32 @@ chip8::chip8(const std::vector<uint8_t>& byte_stream) {
 void chip8::run() {
     using clock = std::chrono::steady_clock;
     
-    // 60 Hz = ~16.67ms per tick
-    const auto frame_duration = std::chrono::duration<double>(1.0 / 60.0);
-    const int instructions_per_frame = 10; // ~600 Hz CPU clock rate
+    // 60 Hz = ~16.67ms per frame
+    constexpr std::chrono::nanoseconds frame_duration(1000000000 / 60);
+    constexpr int instructions_per_frame = 11; // ~660 Hz CPU rate
 
-    auto last_time = clock::now();
+    auto next_frame = clock::now();
 
-    while (this->is_running) {
-        auto current_time = clock::now();
-        std::chrono::duration<double> elapsed = current_time - last_time;
+    while (true) {
+        next_frame += frame_duration;
 
-        if (elapsed >= frame_duration) {
-            last_time = current_time;
-
-            for (int i = 0; i < instructions_per_frame; ++i) {
-                uint16_t raw_opcode = this->fetch();
-                opcode::Instruction instruction = opcode::decode(raw_opcode);
-                this->execute(instruction);
-            }
-
-            if (this->delay_timer > 0) {
-                this->delay_timer--;
-            }
-
-            if (this->sound_timer > 0) {
-                this->sound_timer--;
-            }
+        // 1. Run CPU instructions for this frame
+        for (int i = 0; i < instructions_per_frame; ++i) {
+            uint16_t raw_opcode = this->fetch();
+            opcode::Instruction instruction = opcode::decode(raw_opcode);
+            this->execute(instruction);
         }
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        // 2. Decrement timers once per frame (60 Hz)
+        if (this->delay_timer > 0) {
+            this->delay_timer--;
+        }
+
+        if (this->sound_timer > 0) {
+            this->sound_timer--;
+        }
+
+        std::this_thread::sleep_until(next_frame);
     }
 }
 
