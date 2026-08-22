@@ -797,13 +797,35 @@ TEST_F(Chip8Test, ExecuteLD_ST_V_DoesNotModifyVF) {
     EXPECT_EQ(vm.get_register(VF), 0xF0); // VF shouldn't change
 }
 
-TEST_F(Chip8Test, ExecuteLD_V_DT) {
-    std::vector<uint8_t> rom = {0xF1, 0x15, 0x61, 0x00, 0xF1, 0x07};
+TEST_F(Chip8Test, ExecuteLD_V_DT_ReadsDelayTimer) {
+    std::vector<uint8_t> rom = {
+        0x61, 0x42, // V1 = 0x42
+        0xF1, 0x15, // DT = V1 (0x42)
+        0xF2, 0x07  // V2 = DT
+    };
     chip8 vm(rom);
 
-    vm.execute(opcode::decode(vm.fetch())); // DT = V1
-    vm.execute(opcode::decode(vm.fetch())); // V1 = 0
-    vm.execute(opcode::decode(vm.fetch())); // V1 = DT
+    vm.execute(opcode::decode(vm.fetch())); // V1 = 0x42
+    vm.execute(opcode::decode(vm.fetch())); // DT = 0x42
+    vm.execute(opcode::decode(vm.fetch())); // V2 = DT (0x42)
 
-    EXPECT_EQ(vm.get_register(0x1), vm.get_delay_timer());
+    EXPECT_EQ(vm.get_register(0x2), 0x42);
+}
+
+TEST_F(Chip8Test, ExecuteLD_V_DT_DoesNotModifyVF) {
+    std::vector<uint8_t> rom = {
+        0x6F, 0xFF, // VF = 0xFF
+        0x61, 0x30, // V1 = 0x30
+        0xF1, 0x15, // DT = 0x30
+        0xF2, 0x07  // V2 = DT
+    };
+    chip8 vm(rom);
+
+    vm.execute(opcode::decode(vm.fetch())); // VF = 0xFF
+    vm.execute(opcode::decode(vm.fetch())); // V1 = 0x30
+    vm.execute(opcode::decode(vm.fetch())); // DT = 0x30
+    vm.execute(opcode::decode(vm.fetch())); // V2 = DT
+
+    EXPECT_EQ(vm.get_register(0x2), 0x30);
+    EXPECT_EQ(vm.get_register(VF), 0xFF); // VF shouldn't change
 }
