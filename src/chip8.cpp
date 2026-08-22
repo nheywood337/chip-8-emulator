@@ -16,9 +16,6 @@ chip8::chip8(const std::vector<uint8_t>& byte_stream) {
     std::cout << "[chip8] INFO: Successfully loaded " << byte_stream.size() << " bytes into memory." << std::endl;
 }
 
-#include <chrono>
-#include <thread>
-
 void chip8::run() {
     using clock = std::chrono::steady_clock;
     
