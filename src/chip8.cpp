@@ -6,7 +6,33 @@
 #include <chrono>
 #include <thread>
 
+namespace {
+    // Standard CHIP-8 built-in hex-digit sprites (0-F), 5 bytes each.
+    constexpr std::array<uint8_t, FONT_SET_SIZE> FONT_SET = {
+        0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
+        0x20, 0x60, 0x20, 0x20, 0x70, // 1
+        0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
+        0xF0, 0x10, 0xF0, 0x10, 0xF0, // 3
+        0x90, 0x90, 0xF0, 0x10, 0x10, // 4
+        0xF0, 0x80, 0xF0, 0x10, 0xF0, // 5
+        0xF0, 0x80, 0xF0, 0x90, 0xF0, // 6
+        0xF0, 0x10, 0x20, 0x40, 0x40, // 7
+        0xF0, 0x90, 0xF0, 0x90, 0xF0, // 8
+        0xF0, 0x90, 0xF0, 0x10, 0xF0, // 9
+        0xF0, 0x90, 0xF0, 0x90, 0x90, // A
+        0xE0, 0x90, 0xE0, 0x90, 0xE0, // B
+        0xF0, 0x80, 0x80, 0x80, 0xF0, // C
+        0xE0, 0x90, 0x90, 0x90, 0xE0, // D
+        0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
+        0xF0, 0x80, 0xF0, 0x80, 0x80  // F
+    };
+}
+
 chip8::chip8(const std::vector<uint8_t>& byte_stream) {
+    // Load the built-in hex-digit sprites first, before any ROM data, so
+    // [Fx29] always points at real glyph bytes regardless of what loads next.
+    std::copy(FONT_SET.begin(), FONT_SET.end(), memory.begin() + FONT_START_ADDRESS);
+
     // Guard for a ROM that's too large for our buffer
     if (byte_stream.size() + START_ADDRESS_OFFSET > MEMORY_SIZE) {
         throw chip8_error("[chip8] ERROR: Rom is too large for buffer!");
@@ -101,8 +127,8 @@ void chip8::execute(const opcode::Instruction& instruction) {
         case opcode::Opcode::LD_B_V:    execute_ld_b_v(instruction);    break;
         case opcode::Opcode::LD_I_V:    execute_ld_i_v(instruction);    break;
         case opcode::Opcode::LD_V_I:    execute_ld_v_i(instruction);    break;
-        case opcode::Opcode::INVALID:   throw chip8_error("[chip8]: opcode invalid or not supported yet: " + disassembler::instruction_to_string(instruction));
 
+        // opcode::Opcode::INVALID and any other unhandled value fall through here.
         default: throw chip8_error("[chip8]: opcode invalid or not supported yet: " + disassembler::instruction_to_string(instruction));
     }
 }
@@ -358,27 +384,42 @@ void chip8::execute_ld_st_v(const opcode::Instruction& instruction) {
 
 // [Fx29] Set I to the address of the built-in hex sprite for vX's low nibble
 void chip8::execute_ld_f_v(const opcode::Instruction& instruction) {
-    this->I = 5 * (this->get_register(instruction.x) & 0x0F);
+    this->I = FONT_START_ADDRESS + FONT_SPRITE_SIZE * (this->get_register(instruction.x) & 0x0F);
 }
 
 // [Fx33] Store BCD representation of vX in memory locations I, I+1, and I+2
 void chip8::execute_ld_b_v(const opcode::Instruction& instruction) {
     uint8_t value = this->get_register(instruction.x);
-    this->memory.at(this->I)     = value / 100;             // Hundreds
-    this->memory.at(this->I + 1) = (value / 10) % 10;         // Tens
-    this->memory.at(this->I + 2) = value % 10;             // Ones
+    try {
+        this->memory.at(this->I)     = value / 100;             // Hundreds
+        this->memory.at(this->I + 1) = (value / 10) % 10;         // Tens
+        this->memory.at(this->I + 2) = value % 10;             // Ones
+    }
+    catch (const std::out_of_range& e) {
+        throw chip8_error(std::string("[chip8]: write out of range: ") + e.what());
+    }
 }
 
 // [Fx55] Store registers V0 through VX in memory starting at address I
 void chip8::execute_ld_i_v(const opcode::Instruction& instruction) {
-    for (uint8_t i = 0; i <= instruction.x; ++i) {
-        this->memory.at(this->I + i) = this->v_registers.at(i);
+    try {
+        for (uint8_t i = 0; i <= instruction.x; ++i) {
+            this->memory.at(this->I + i) = this->v_registers.at(i);
+        }
+    }
+    catch (const std::out_of_range& e) {
+        throw chip8_error(std::string("[chip8]: write out of range: ") + e.what());
     }
 }
 // [Fx65] Read registers V0 through VX from memory starting at address I
 void chip8::execute_ld_v_i(const opcode::Instruction& instruction) {
-    for (uint8_t i = 0; i <= instruction.x; ++i) {
-        this->v_registers.at(i) = this->memory.at(this->I + i);
+    try {
+        for (uint8_t i = 0; i <= instruction.x; ++i) {
+            this->v_registers.at(i) = this->memory.at(this->I + i);
+        }
+    }
+    catch (const std::out_of_range& e) {
+        throw chip8_error(std::string("[chip8]: read out of range: ") + e.what());
     }
 }
 

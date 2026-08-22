@@ -830,36 +830,204 @@ TEST_F(Chip8Test, ExecuteLD_V_DT_DoesNotModifyVF) {
     EXPECT_EQ(vm.get_register(VF), 0xFF); // VF shouldn't change
 }
 
-// 8XY1
-TEST_F(Chip8Test, ExecuteOR_V_V_DoesNotModifyVF) {
+// 8XY1 (VF is not an operand, but the COSMAC VIP quirk still resets it)
+TEST_F(Chip8Test, ExecuteOR_V_V_QuirkResetsVFEvenWhenNotOperand) {
     std::vector<uint8_t> rom = {
+        0x6F, 0xAB, // VF = 0xAB (nonzero, and not involved in the OR below)
         0x61, 0xF0, // V1 = 0xF0
         0x62, 0x0F, // V2 = 0x0F
         0x81, 0x21  // V1 |= V2
     };
     chip8 vm(rom);
 
+    vm.execute(opcode::decode(vm.fetch())); // VF = 0xAB
     vm.execute(opcode::decode(vm.fetch())); // V1 = 0xF0
     vm.execute(opcode::decode(vm.fetch())); // V2 = 0x0F
     vm.execute(opcode::decode(vm.fetch())); // V1 |= V2
 
     EXPECT_EQ(vm.get_register(0x1), 0xFF);
-    EXPECT_EQ(vm.get_register(VF), 0x00); // VF shouldn't change
+    // VF was nonzero and not a source operand, so if this reads 0 it's
+    // because of the unconditional COSMAC VIP reset, not a coincidence.
+    EXPECT_EQ(vm.get_register(VF), 0x00);
 }
 
-// [8XY3]
-TEST_F(Chip8Test, ExecuteXOR_V_V_DoesNotModifyVF) {
+// [8XY3] (VF is not an operand, but the COSMAC VIP quirk still resets it)
+TEST_F(Chip8Test, ExecuteXOR_V_V_QuirkResetsVFEvenWhenNotOperand) {
     std::vector<uint8_t> rom = {
+        0x6F, 0xAB, // VF = 0xAB (nonzero, and not involved in the XOR below)
         0x61, 0xF0, // V1 = 0xF0
         0x62, 0x0F, // V2 = 0x0F
         0x81, 0x23  // V1 ^= V2
     };
     chip8 vm(rom);
 
+    vm.execute(opcode::decode(vm.fetch())); // VF = 0xAB
     vm.execute(opcode::decode(vm.fetch())); // V1 = 0xF0
     vm.execute(opcode::decode(vm.fetch())); // V2 = 0x0F
     vm.execute(opcode::decode(vm.fetch())); // V1 ^= V2
 
     EXPECT_EQ(vm.get_register(0x1), 0xF0 ^ 0x0F);
-    EXPECT_EQ(vm.get_register(VF), 0x00); // VF shouldn't change
+    // VF was nonzero and not a source operand, so if this reads 0 it's
+    // because of the unconditional COSMAC VIP reset, not a coincidence.
+    EXPECT_EQ(vm.get_register(VF), 0x00);
+}
+
+// FX29, FX33, FX55, FX65
+// ----------------------------------------------------------------------------
+
+TEST_F(Chip8Test, ExecuteLD_F_V_PointsAtCorrectDigitSprite) {
+    std::vector<uint8_t> rom = {
+        0x60, 0x00, // V0 = 0
+        0xF0, 0x29  // I = font sprite address for digit in V0
+    };
+    chip8 vm(rom);
+
+    vm.execute(opcode::decode(vm.fetch())); // V0 = 0
+    vm.execute(opcode::decode(vm.fetch())); // I = sprite('0')
+
+    EXPECT_EQ(vm.get_I(), FONT_START_ADDRESS);
+
+    const auto& memory = vm.get_memory();
+    const std::array<uint8_t, 5> expected_glyph = {0xF0, 0x90, 0x90, 0x90, 0xF0};
+    for (size_t i = 0; i < expected_glyph.size(); ++i) {
+        EXPECT_EQ(memory.at(vm.get_I() + i), expected_glyph.at(i));
+    }
+}
+
+TEST_F(Chip8Test, ExecuteLD_F_V_MasksRegisterToLowNibble) {
+    std::vector<uint8_t> rom = {
+        0x60, 0xFF, // V0 = 0xFF; only the low nibble (0xF) should select the glyph
+        0xF0, 0x29
+    };
+    chip8 vm(rom);
+
+    vm.execute(opcode::decode(vm.fetch())); // V0 = 0xFF
+    vm.execute(opcode::decode(vm.fetch())); // I = sprite('F')
+
+    EXPECT_EQ(vm.get_I(), FONT_START_ADDRESS + FONT_SPRITE_SIZE * 0xF);
+
+    const auto& memory = vm.get_memory();
+    const std::array<uint8_t, 5> expected_glyph = {0xF0, 0x80, 0xF0, 0x80, 0x80};
+    for (size_t i = 0; i < expected_glyph.size(); ++i) {
+        EXPECT_EQ(memory.at(vm.get_I() + i), expected_glyph.at(i));
+    }
+}
+
+TEST_F(Chip8Test, ExecuteLD_B_V_StoresBCDDigits) {
+    std::vector<uint8_t> rom = {
+        0xA3, 0x00, // I = 0x300
+        0x60, 0x7B, // V0 = 123
+        0xF0, 0x33  // store BCD of V0 at I, I+1, I+2
+    };
+    chip8 vm(rom);
+
+    vm.execute(opcode::decode(vm.fetch())); // I = 0x300
+    vm.execute(opcode::decode(vm.fetch())); // V0 = 123
+    vm.execute(opcode::decode(vm.fetch())); // BCD store
+
+    const auto& memory = vm.get_memory();
+    EXPECT_EQ(memory.at(0x300), 1);
+    EXPECT_EQ(memory.at(0x301), 2);
+    EXPECT_EQ(memory.at(0x302), 3);
+}
+
+TEST_F(Chip8Test, ExecuteLD_B_V_ThrowsChip8ErrorOnOutOfRangeWrite) {
+    std::vector<uint8_t> rom = {
+        0xAF, 0xFE, // I = 0xFFE (only 2 bytes of memory remain after this)
+        0x60, 0x7B, // V0 = 123 (BCD store needs 3 bytes: I, I+1, I+2)
+        0xF0, 0x33
+    };
+    chip8 vm(rom);
+
+    vm.execute(opcode::decode(vm.fetch())); // I = 0xFFE
+    vm.execute(opcode::decode(vm.fetch())); // V0 = 123
+
+    // Should raise our own chip8_error, not a raw std::out_of_range
+    EXPECT_THROW(vm.execute(opcode::decode(vm.fetch())), chip8_error);
+}
+
+TEST_F(Chip8Test, ExecuteLD_I_V_StoresRegistersToMemory) {
+    std::vector<uint8_t> rom = {
+        0xA3, 0x00, // I = 0x300
+        0x60, 0x11, // V0 = 0x11
+        0x61, 0x22, // V1 = 0x22
+        0x62, 0x33, // V2 = 0x33
+        0xF2, 0x55  // store V0..V2 at I..I+2
+    };
+    chip8 vm(rom);
+
+    for (int i = 0; i < 5; ++i) {
+        vm.execute(opcode::decode(vm.fetch()));
+    }
+
+    const auto& memory = vm.get_memory();
+    EXPECT_EQ(memory.at(0x300), 0x11);
+    EXPECT_EQ(memory.at(0x301), 0x22);
+    EXPECT_EQ(memory.at(0x302), 0x33);
+}
+
+TEST_F(Chip8Test, ExecuteLD_I_V_ThrowsChip8ErrorOnOutOfRangeWrite) {
+    std::vector<uint8_t> rom = {
+        0xAF, 0xFE, // I = 0xFFE (only 2 bytes of memory remain after this)
+        0xF2, 0x55  // store V0..V2 (3 registers) - overruns memory
+    };
+    chip8 vm(rom);
+
+    vm.execute(opcode::decode(vm.fetch())); // I = 0xFFE
+
+    // Should raise our own chip8_error, not a raw std::out_of_range
+    EXPECT_THROW(vm.execute(opcode::decode(vm.fetch())), chip8_error);
+}
+
+TEST_F(Chip8Test, ExecuteLD_V_I_LoadsRegistersFromMemory) {
+    std::vector<uint8_t> rom = {
+        0xA3, 0x00, // I = 0x300
+        0x60, 0x11, // V0 = 0x11
+        0x61, 0x22, // V1 = 0x22
+        0x62, 0x33, // V2 = 0x33
+        0xF2, 0x55, // store V0..V2 at I..I+2
+        0x60, 0x00, // V0 = 0 (cleared so the read-back below is verifiable)
+        0x61, 0x00, // V1 = 0
+        0x62, 0x00, // V2 = 0
+        0xF2, 0x65  // load V0..V2 back from I..I+2
+    };
+    chip8 vm(rom);
+
+    for (int i = 0; i < 9; ++i) {
+        vm.execute(opcode::decode(vm.fetch()));
+    }
+
+    EXPECT_EQ(vm.get_register(0x0), 0x11);
+    EXPECT_EQ(vm.get_register(0x1), 0x22);
+    EXPECT_EQ(vm.get_register(0x2), 0x33);
+}
+
+TEST_F(Chip8Test, ExecuteLD_V_I_ThrowsChip8ErrorOnOutOfRangeRead) {
+    std::vector<uint8_t> rom = {
+        0xAF, 0xFE, // I = 0xFFE (only 2 bytes of memory remain after this)
+        0xF2, 0x65  // load V0..V2 (3 registers) - overruns memory
+    };
+    chip8 vm(rom);
+
+    vm.execute(opcode::decode(vm.fetch())); // I = 0xFFE
+
+    // Should raise our own chip8_error, not a raw std::out_of_range
+    EXPECT_THROW(vm.execute(opcode::decode(vm.fetch())), chip8_error);
+}
+
+TEST_F(Chip8Test, ConstructorLoadsFontSetWithoutClobberingRomArea) {
+    std::vector<uint8_t> rom = {0x00, 0xE0};
+    chip8 vm(rom);
+
+    const auto& memory = vm.get_memory();
+    // Digit '0' sprite lives at the very start of memory.
+    EXPECT_EQ(memory.at(0), 0xF0);
+    EXPECT_EQ(memory.at(1), 0x90);
+    EXPECT_EQ(memory.at(2), 0x90);
+    EXPECT_EQ(memory.at(3), 0x90);
+    EXPECT_EQ(memory.at(4), 0xF0);
+
+    // Font data must not spill into the ROM's load area at 0x200.
+    EXPECT_EQ(memory.at(START_ADDRESS_OFFSET), 0x00);
+    EXPECT_EQ(memory.at(START_ADDRESS_OFFSET + 1), 0xE0);
 }
