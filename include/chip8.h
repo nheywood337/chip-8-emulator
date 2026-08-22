@@ -20,6 +20,8 @@ class chip8 {
         uint16_t fetch();                                           // FETCH STEP
         void execute(const opcode::Instruction& instruction);       // execution dispatcher (DECODE STEP)
 
+        void run(); // main loop for running the emulator
+
         // getters for tests
         uint16_t get_program_counter() const;
         uint8_t get_register(uint8_t index) const;

@@ -14,6 +14,14 @@ chip8::chip8(const std::vector<uint8_t>& byte_stream) {
     std::cout << "[chip8] INFO: Successfully loaded " << byte_stream.size() << " bytes into memory." << std::endl;
 }
 
+void chip8::run() {
+    while (true) {
+        uint16_t raw_opcode = this->fetch();
+        opcode::Instruction instruction = opcode::decode(raw_opcode);
+        this->execute(instruction);
+    }
+}
+
 uint16_t chip8::fetch() {
     try {
         uint8_t hi = this->memory.at(this->program_counter);
