@@ -829,3 +829,37 @@ TEST_F(Chip8Test, ExecuteLD_V_DT_DoesNotModifyVF) {
     EXPECT_EQ(vm.get_register(0x2), 0x30);
     EXPECT_EQ(vm.get_register(VF), 0xFF); // VF shouldn't change
 }
+
+// 8XY1
+TEST_F(Chip8Test, ExecuteOR_V_V_DoesNotModifyVF) {
+    std::vector<uint8_t> rom = {
+        0x61, 0xF0, // V1 = 0xF0
+        0x62, 0x0F, // V2 = 0x0F
+        0x81, 0x21  // V1 |= V2
+    };
+    chip8 vm(rom);
+
+    vm.execute(opcode::decode(vm.fetch())); // V1 = 0xF0
+    vm.execute(opcode::decode(vm.fetch())); // V2 = 0x0F
+    vm.execute(opcode::decode(vm.fetch())); // V1 |= V2
+
+    EXPECT_EQ(vm.get_register(0x1), 0xFF);
+    EXPECT_EQ(vm.get_register(VF), 0x00); // VF shouldn't change
+}
+
+// [8XY3]
+TEST_F(Chip8Test, ExecuteXOR_V_V_DoesNotModifyVF) {
+    std::vector<uint8_t> rom = {
+        0x61, 0xF0, // V1 = 0xF0
+        0x62, 0x0F, // V2 = 0x0F
+        0x81, 0x23  // V1 ^= V2
+    };
+    chip8 vm(rom);
+
+    vm.execute(opcode::decode(vm.fetch())); // V1 = 0xF0
+    vm.execute(opcode::decode(vm.fetch())); // V2 = 0x0F
+    vm.execute(opcode::decode(vm.fetch())); // V1 ^= V2
+
+    EXPECT_EQ(vm.get_register(0x1), 0xF0 ^ 0x0F);
+    EXPECT_EQ(vm.get_register(VF), 0x00); // VF shouldn't change
+}

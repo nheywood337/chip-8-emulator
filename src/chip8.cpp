@@ -97,7 +97,11 @@ void chip8::execute(const opcode::Instruction& instruction) {
         case opcode::Opcode::LD_V_DT:   execute_ld_v_dt(instruction);   break;
         case opcode::Opcode::LD_DT_V:   execute_ld_dt_v(instruction);   break;
         case opcode::Opcode::LD_ST_V:   execute_ld_st_v(instruction);   break;
-        
+        case opcode::Opcode::LD_F_V:    execute_ld_f_v(instruction);    break;
+        case opcode::Opcode::LD_B_V:    execute_ld_b_v(instruction);    break;
+        case opcode::Opcode::LD_I_V:    execute_ld_i_v(instruction);    break;
+        case opcode::Opcode::LD_V_I:    execute_ld_v_i(instruction);    break;
+        case opcode::Opcode::INVALID:   throw chip8_error("[chip8]: opcode invalid or not supported yet: " + disassembler::instruction_to_string(instruction));
 
         default: throw chip8_error("[chip8]: opcode invalid or not supported yet: " + disassembler::instruction_to_string(instruction));
     }
@@ -352,6 +356,31 @@ void chip8::execute_ld_st_v(const opcode::Instruction& instruction) {
     this->sound_timer = this->get_register(instruction.x);
 }
 
+// [Fx29] Set I to the address of the built-in hex sprite for vX's low nibble
+void chip8::execute_ld_f_v(const opcode::Instruction& instruction) {
+    this->I = 5 * (this->get_register(instruction.x) & 0x0F);
+}
+
+// [Fx33] Store BCD representation of vX in memory locations I, I+1, and I+2
+void chip8::execute_ld_b_v(const opcode::Instruction& instruction) {
+    uint8_t value = this->get_register(instruction.x);
+    this->memory.at(this->I)     = value / 100;             // Hundreds
+    this->memory.at(this->I + 1) = (value / 10) % 10;         // Tens
+    this->memory.at(this->I + 2) = value % 10;             // Ones
+}
+
+// [Fx55] Store registers V0 through VX in memory starting at address I
+void chip8::execute_ld_i_v(const opcode::Instruction& instruction) {
+    for (uint8_t i = 0; i <= instruction.x; ++i) {
+        this->memory.at(this->I + i) = this->v_registers.at(i);
+    }
+}
+// [Fx65] Read registers V0 through VX from memory starting at address I
+void chip8::execute_ld_v_i(const opcode::Instruction& instruction) {
+    for (uint8_t i = 0; i <= instruction.x; ++i) {
+        this->v_registers.at(i) = this->memory.at(this->I + i);
+    }
+}
 
 // ----- Helpers for tests -----
 const std::array<uint8_t, DISPLAY_WIDTH * DISPLAY_HEIGHT>& chip8::get_display() const {
@@ -395,4 +424,8 @@ uint8_t chip8::get_delay_timer() const {
 
 uint8_t chip8::get_sound_timer() const {
     return this->sound_timer;
+}
+
+const std::array<uint8_t, MEMORY_SIZE>& chip8::get_memory() const {
+    return this->memory;
 }

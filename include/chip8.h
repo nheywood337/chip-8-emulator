@@ -30,6 +30,7 @@ class chip8 {
         const std::array<uint8_t, 16>& get_keypad() const;
         uint8_t get_delay_timer() const;
         uint8_t get_sound_timer() const;
+        const std::array<uint8_t, MEMORY_SIZE>& get_memory() const;
         void set_keypad_state(uint8_t key, bool pressed);
         void set_delay_timer(uint8_t value);
         void set_sound_timer(uint8_t value);
@@ -139,5 +140,17 @@ class chip8 {
 
         // [Fx1E] add vX to I
         void execute_add_i_v(const opcode::Instruction& instruction);
+
+        // [Fx29] Set I to the address of the built-in hex sprite for vX's low nibble
+        void execute_ld_f_v(const opcode::Instruction& instruction);
+
+        // [Fx33] Store BCD representation of vX in memory locations I, I+1, and I+2
+        void execute_ld_b_v(const opcode::Instruction& instruction);
+
+        // [Fx55] Store registers V0 through VX in memory starting at address I
+        void execute_ld_i_v(const opcode::Instruction& instruction);
+
+        // [Fx65] Read registers V0 through VX from memory starting at address I
+        void execute_ld_v_i(const opcode::Instruction& instruction);
 
 };
