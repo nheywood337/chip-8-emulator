@@ -10,7 +10,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(PROJECT_WARNING_FLAGS -Wall -Wextra -Wpedantic)
 
 # SDL2, fetched from source like googletest in tests/. Still needs the X11/GL
-# headers installed to build a working video driver on Linux (see README).
+# headers installed to get a working video driver on Linux (see README).
 include(FetchContent)
 
 set(SDL_SHARED          OFF CACHE BOOL "" FORCE)

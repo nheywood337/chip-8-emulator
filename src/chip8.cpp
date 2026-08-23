@@ -39,14 +39,12 @@ chip8::chip8(const std::vector<uint8_t>& byte_stream) {
     std::cout << "[chip8] INFO: Successfully loaded " << byte_stream.size() << " bytes into memory." << std::endl;
 }
 
-// one fetch-decode-execute cycle; the frontend decides how often to call it
 void chip8::step() {
     uint16_t raw_opcode = this->fetch();
     opcode::Instruction instruction = opcode::decode(raw_opcode);
     this->execute(instruction);
 }
 
-// timers count down at 60 Hz, independent of the CPU rate
 void chip8::tick_timers() {
     if (this->delay_timer > 0) {
         this->delay_timer--;
