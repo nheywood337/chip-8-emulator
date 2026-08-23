@@ -3,8 +3,6 @@
 #include <fstream>
 #include <iostream>
 #include <algorithm>
-#include <chrono>
-#include <thread>
 
 namespace {
     // Standard CHIP-8 built-in hex-digit sprites (0-F), 5 bytes each.
@@ -41,35 +39,21 @@ chip8::chip8(const std::vector<uint8_t>& byte_stream) {
     std::cout << "[chip8] INFO: Successfully loaded " << byte_stream.size() << " bytes into memory." << std::endl;
 }
 
-void chip8::run() {
-    using clock = std::chrono::steady_clock;
-    
-    // 60 Hz = ~16.67ms per frame
-    constexpr std::chrono::nanoseconds frame_duration(1000000000 / 60);
-    constexpr int instructions_per_frame = 11; // ~660 Hz CPU rate
+// one fetch-decode-execute cycle; the frontend decides how often to call it
+void chip8::step() {
+    uint16_t raw_opcode = this->fetch();
+    opcode::Instruction instruction = opcode::decode(raw_opcode);
+    this->execute(instruction);
+}
 
-    auto next_frame = clock::now();
+// timers count down at 60 Hz, independent of the CPU rate
+void chip8::tick_timers() {
+    if (this->delay_timer > 0) {
+        this->delay_timer--;
+    }
 
-    while (true) {
-        next_frame += frame_duration;
-
-        // 1. Run CPU instructions for this frame
-        for (int i = 0; i < instructions_per_frame; ++i) {
-            uint16_t raw_opcode = this->fetch();
-            opcode::Instruction instruction = opcode::decode(raw_opcode);
-            this->execute(instruction);
-        }
-
-        // 2. Decrement timers once per frame (60 Hz)
-        if (this->delay_timer > 0) {
-            this->delay_timer--;
-        }
-
-        if (this->sound_timer > 0) {
-            this->sound_timer--;
-        }
-
-        std::this_thread::sleep_until(next_frame);
+    if (this->sound_timer > 0) {
+        this->sound_timer--;
     }
 }
 
