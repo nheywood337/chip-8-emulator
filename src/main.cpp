@@ -15,69 +15,18 @@ enum class MODE {
 };
 
 namespace {
-    constexpr int WINDOW_SCALE = 12;                   // 64x32 -> 768x384
-    constexpr int DEFAULT_INSTRUCTIONS_PER_FRAME = 11; // ~660 Hz CPU rate
+    constexpr int WINDOW_SCALE = 12;           // 64x32 -> 768x384
+    constexpr int INSTRUCTIONS_PER_FRAME = 11; // ~660 Hz CPU rate
 
     // 60 Hz = ~16.67ms per frame
     constexpr std::chrono::nanoseconds FRAME_DURATION(1000000000 / 60);
 
-    struct options {
-        int instructions_per_frame = DEFAULT_INSTRUCTIONS_PER_FRAME;
-        long frame_limit = 0; // 0 = run until the user quits
-    };
-
-    void print_usage() {
-        std::cerr << "usage: ./chip8 -r <PATH_TO_ROM> [--ipf N] [--frames N]\n"
-                  << "       ./chip8 -d <PATH_TO_ROM>\n"
-                  << "  --ipf N     instructions per frame, default "
-                  << DEFAULT_INSTRUCTIONS_PER_FRAME << " (some ROMs are timing sensitive)\n"
-                  << "  --frames N  quit after N frames, for smoke tests\n";
-    }
-
-    bool parse_options(int argc, char* argv[], options& opts) {
-        for (int i = 3; i < argc; ++i) {
-            const std::string flag = argv[i];
-
-            if (i + 1 >= argc) {
-                std::cerr << "ERROR: " << flag << " needs a value" << std::endl;
-                return false;
-            }
-
-            const std::string value = argv[++i];
-
-            try {
-                if (flag == "--ipf") {
-                    opts.instructions_per_frame = std::stoi(value);
-                    if (opts.instructions_per_frame < 1) throw std::out_of_range("must be >= 1");
-                }
-                else if (flag == "--frames") {
-                    opts.frame_limit = std::stol(value);
-                    if (opts.frame_limit < 1) throw std::out_of_range("must be >= 1");
-                }
-                else {
-                    std::cerr << "ERROR: unknown option " << flag << std::endl;
-                    return false;
-                }
-            }
-            catch (const std::exception&) {
-                std::cerr << "ERROR: bad value for " << flag << ": " << value << std::endl;
-                return false;
-            }
-        }
-
-        return true;
-    }
-
     // one iteration = one 60 Hz frame
-    void run_emulator(chip8& chip, platform& plat, const options& opts) {
+    void run_emulator(chip8& chip, platform& plat) {
         using clock = std::chrono::steady_clock;
         auto next_frame = clock::now();
 
-        for (long frame = 0; plat.poll_events(); ++frame) {
-            if (opts.frame_limit > 0 && frame >= opts.frame_limit) {
-                break;
-            }
-
+        while (plat.poll_events()) {
             next_frame += FRAME_DURATION;
 
             // the keypad lives in both places; 16 bytes a frame is the price of
@@ -87,7 +36,7 @@ namespace {
                 chip.set_keypad_state(k, keys[k] != 0);
             }
 
-            for (int i = 0; i < opts.instructions_per_frame; ++i) {
+            for (int i = 0; i < INSTRUCTIONS_PER_FRAME; ++i) {
                 chip.step();
             }
 
@@ -118,8 +67,8 @@ MODE initialize_mode(const std::string& mode) {
 }
 
 int main(int argc, char* argv[]) {
-    if (argc < 3) {
-        print_usage();
+    if (argc != 3) {
+        std::cerr << "ERROR: Invalid execution, ex: ./chip8 -r <PATH_TO_ROM>" << std::endl;
         return EXIT_FAILURE;
     }
 
@@ -127,13 +76,6 @@ int main(int argc, char* argv[]) {
 
     if (mode == MODE::FAILURE) {
         std::cerr << "ERROR: Invalid flag " << argv[1] << std::endl;
-        print_usage();
-        return EXIT_FAILURE;
-    }
-
-    options opts;
-    if (!parse_options(argc, argv, opts)) {
-        print_usage();
         return EXIT_FAILURE;
     }
 
@@ -148,7 +90,7 @@ int main(int argc, char* argv[]) {
         try {
             chip8 chip(*result);
             platform plat("CHIP-8", WINDOW_SCALE);
-            run_emulator(chip, plat, opts);
+            run_emulator(chip, plat);
         }
         catch (const platform_error& e) {
             std::cerr << e.what() << std::endl;

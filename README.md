@@ -23,12 +23,6 @@ Run a ROM:
 ./build/chip8 -r roms/<ROM_TO_LOAD>
 ```
 
-Some ROMs want a different CPU speed. `--ipf` sets instructions per 60 Hz frame
-(default 11):
-```bash
-./build/chip8 -r roms/<ROM_TO_LOAD> --ipf 30
-```
-
 Disassemble a ROM into a listing:
 ```bash
 ./build/chip8 -d roms/<ROM_TO_LOAD>
