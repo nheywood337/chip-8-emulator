@@ -6,11 +6,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Define warnings once for reuse across targets
 set(PROJECT_WARNING_FLAGS -Wall -Wextra -Wpedantic)
 
-# SDL2, fetched from source like googletest in tests/. Still needs the X11/GL
-# headers installed to build a working video driver on Linux (see README).
 include(FetchContent)
 
 set(SDL_SHARED          OFF CACHE BOOL "" FORCE)
@@ -27,7 +24,6 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(SDL2)
 
-# Core Library - kept SDL-free so the tests don't have to link it
 add_library(chip8_core
     src/chip8.cpp
     src/rom_loader.cpp
@@ -38,7 +34,6 @@ add_library(chip8_core
 target_include_directories(chip8_core PUBLIC include)
 target_compile_options(chip8_core PRIVATE ${PROJECT_WARNING_FLAGS})
 
-# Main Executable - the only target that links SDL2
 add_executable(chip8
     src/main.cpp
     src/platform.cpp

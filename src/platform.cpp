@@ -60,8 +60,6 @@ platform::platform(const std::string& title, int scale) {
         throw platform_error(std::string("[platform] ERROR: SDL_CreateWindow failed: ") + SDL_GetError());
     }
 
-    // flags of 0 lets SDL pick a backend and fall back to software.
-    // No vsync on purpose - main.cpp already paces the loop at 60 Hz.
     renderer = SDL_CreateRenderer(window, -1, 0);
 
     if (renderer == nullptr) {
@@ -70,13 +68,11 @@ platform::platform(const std::string& title, int scale) {
         throw platform_error(std::string("[platform] ERROR: SDL_CreateRenderer failed: ") + SDL_GetError());
     }
 
-    // draw in 64x32 coords and let SDL scale up. Integer scaling letterboxes
-    // rather than stretching pixels to uneven sizes - SDL_FALSE fills the window.
+    // draw in 64x32 coords and let SDL scale up
     SDL_RenderSetLogicalSize(renderer, static_cast<int>(DISPLAY_WIDTH), static_cast<int>(DISPLAY_HEIGHT));
     SDL_RenderSetIntegerScale(renderer, SDL_TRUE);
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); // letterbox bars
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 
-    // STREAMING since we rewrite the whole texture every frame
     texture = SDL_CreateTexture(
         renderer,
         SDL_PIXELFORMAT_RGBA8888,
@@ -142,7 +138,6 @@ void platform::render(const std::array<uint8_t, DISPLAY_WIDTH * DISPLAY_HEIGHT>&
         this->pixels[i] = display[i] ? COLOR_ON : COLOR_OFF;
     }
 
-    // last arg is the pitch: bytes per row, not per pixel. Get it wrong and the image shears.
     SDL_UpdateTexture(
         this->texture,
         nullptr,
