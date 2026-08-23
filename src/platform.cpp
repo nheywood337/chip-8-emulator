@@ -3,7 +3,6 @@
 #include <iostream>
 
 namespace {
-    // 0xRRGGBBAA to match SDL_PIXELFORMAT_RGBA8888
     constexpr uint32_t COLOR_ON  = 0xE0F8D0FF;
     constexpr uint32_t COLOR_OFF = 0x0F180FFF;
 
@@ -141,8 +140,6 @@ platform::platform(const std::string& title, int scale) {
         throw platform_error(std::string("[platform] ERROR: SDL_CreateRenderer: ") + SDL_GetError());
     }
 
-    // draw in 64x32 and let SDL scale up. Integer scaling letterboxes instead
-    // of stretching pixels unevenly; SDL_FALSE fills the window.
     sdl_check(SDL_RenderSetLogicalSize(this->renderer.get(),
                                        static_cast<int>(DISPLAY_WIDTH),
                                        static_cast<int>(DISPLAY_HEIGHT)),
@@ -150,7 +147,6 @@ platform::platform(const std::string& title, int scale) {
     sdl_check(SDL_RenderSetIntegerScale(this->renderer.get(), SDL_TRUE), "SDL_RenderSetIntegerScale");
     sdl_check(SDL_SetRenderDrawColor(this->renderer.get(), 0, 0, 0, 255), "SDL_SetRenderDrawColor");
 
-    // STREAMING so render() can lock it and write straight in
     this->texture.reset(SDL_CreateTexture(
         this->renderer.get(),
         SDL_PIXELFORMAT_RGBA8888,
@@ -205,11 +201,8 @@ void platform::render(const std::array<uint8_t, DISPLAY_WIDTH * DISPLAY_HEIGHT>&
     void* raw = nullptr;
     int pitch = 0;
 
-    // locking gives us the texture's own memory, so the frame is written once
     sdl_check(SDL_LockTexture(this->texture.get(), nullptr, &raw, &pitch), "SDL_LockTexture");
 
-    // pitch is bytes per row and SDL is free to pad it, so walk row by row
-    // instead of treating the block as one flat 64*32 array
     auto* bytes = static_cast<uint8_t*>(raw);
     for (size_t y = 0; y < DISPLAY_HEIGHT; ++y) {
         auto* row = reinterpret_cast<uint32_t*>(bytes + y * static_cast<size_t>(pitch));

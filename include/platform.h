@@ -21,23 +21,27 @@ struct sdl_window_deleter   { void operator()(SDL_Window* w) const; };
 struct sdl_renderer_deleter { void operator()(SDL_Renderer* r) const; };
 struct sdl_texture_deleter  { void operator()(SDL_Texture* t) const; };
 
+using window_ptr   = std::unique_ptr<SDL_Window, sdl_window_deleter>;
+using renderer_ptr = std::unique_ptr<SDL_Renderer, sdl_renderer_deleter>;
+using texture_ptr  = std::unique_ptr<SDL_Texture, sdl_texture_deleter>;
+
+static_assert(sizeof(window_ptr) == sizeof(SDL_Window*), "deleter is costing a word");
+
 class platform {
     public:
-        platform(const std::string& title, int scale); // scale = screen pixels per CHIP-8 pixel
+        platform(const std::string& title, int scale);
         ~platform();
 
         platform(const platform&) = delete;
         platform& operator=(const platform&) = delete;
 
-        bool poll_events(); // false once the user wants to quit
+        bool poll_events();
         void render(const std::array<uint8_t, DISPLAY_WIDTH * DISPLAY_HEIGHT>& display);
         void set_beep(bool on);
 
         const std::array<uint8_t, 16>& get_keypad() const;
 
     private:
-        // refcounted claim on SDL's process-global subsystems rather than
-        // ownership, so two platforms can coexist. Hence no SDL_Quit().
         struct subsystems {
             subsystems();
             ~subsystems();
@@ -55,16 +59,15 @@ class platform {
                 void set(bool on);
 
             private:
-                uint32_t device = 0; // SDL_AudioDeviceID, 0 = no device, stay quiet
-                double phase = 0.0;  // survives across callbacks so start/stop doesn't click
+                uint32_t device = 0; 
+                double phase = 0.0;  
                 bool playing = false;
         };
 
-        // order matters: SDL up before any handle, released after the last one
         subsystems sdl;
-        std::unique_ptr<SDL_Window, sdl_window_deleter> window;
-        std::unique_ptr<SDL_Renderer, sdl_renderer_deleter> renderer;
-        std::unique_ptr<SDL_Texture, sdl_texture_deleter> texture;
+        window_ptr window;
+        renderer_ptr renderer;
+        texture_ptr texture;
         beeper sound;
 
         std::array<uint8_t, 16> keypad = {};

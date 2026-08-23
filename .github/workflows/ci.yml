@@ -11,6 +11,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # without these SDL quietly builds a dummy-only video driver
+      - name: Install SDL2 build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libx11-dev libxext-dev libxrandr-dev \
+                                  libxcursor-dev libxi-dev libgl1-mesa-dev \
+                                  libasound2-dev
+
       - name: Configure
         run: cmake -S . -B build
 
@@ -20,3 +28,4 @@ jobs:
       - name: Test
         working-directory: build
         run: ctest --output-on-failure
+
