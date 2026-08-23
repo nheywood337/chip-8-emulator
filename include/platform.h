@@ -37,7 +37,6 @@ class platform {
 
         bool poll_events();
         void render(const std::array<uint8_t, DISPLAY_WIDTH * DISPLAY_HEIGHT>& display);
-        void set_beep(bool on);
 
         const std::array<uint8_t, 16>& get_keypad() const;
 
@@ -49,26 +48,10 @@ class platform {
             subsystems& operator=(const subsystems&) = delete;
         };
 
-        class beeper {
-            public:
-                beeper();
-                ~beeper();
-                beeper(const beeper&) = delete;
-                beeper& operator=(const beeper&) = delete;
-
-                void set(bool on);
-
-            private:
-                uint32_t device = 0; 
-                double phase = 0.0;  
-                bool playing = false;
-        };
-
         subsystems sdl;
         window_ptr window;
         renderer_ptr renderer;
         texture_ptr texture;
-        beeper sound;
 
         std::array<uint8_t, 16> keypad = {};
 };

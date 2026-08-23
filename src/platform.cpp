@@ -1,15 +1,9 @@
 #include "platform.h"
 #include <SDL.h>
-#include <iostream>
 
 namespace {
     constexpr uint32_t COLOR_ON  = 0xE0F8D0FF;
     constexpr uint32_t COLOR_OFF = 0x0F180FFF;
-
-    constexpr int      SAMPLE_RATE    = 44100;
-    constexpr int      BEEP_HZ        = 440;
-    constexpr int16_t  BEEP_AMPLITUDE = 3000;
-    constexpr uint16_t AUDIO_BUFFER   = 512; // samples
 
     void sdl_check(int result, const char* what) {
         if (result != 0) {
@@ -43,22 +37,6 @@ namespace {
             default:     return -1; // not a keypad key
         }
     }
-
-    // userdata is the beeper's phase
-    void audio_callback(void* userdata, uint8_t* stream, int len) {
-        auto* phase = static_cast<double*>(userdata);
-        auto* samples = reinterpret_cast<int16_t*>(stream);
-        const int count = len / static_cast<int>(sizeof(int16_t));
-        const double step = static_cast<double>(BEEP_HZ) / SAMPLE_RATE;
-
-        for (int i = 0; i < count; ++i) {
-            samples[i] = (*phase < 0.5) ? BEEP_AMPLITUDE : -BEEP_AMPLITUDE;
-            *phase += step;
-            if (*phase >= 1.0) {
-                *phase -= 1.0;
-            }
-        }
-    }
 }
 
 void sdl_window_deleter::operator()(SDL_Window* w) const     { SDL_DestroyWindow(w); }
@@ -67,49 +45,10 @@ void sdl_texture_deleter::operator()(SDL_Texture* t) const   { SDL_DestroyTextur
 
 platform::subsystems::subsystems() {
     sdl_check(SDL_InitSubSystem(SDL_INIT_VIDEO), "SDL_InitSubSystem(VIDEO)");
-
-    // audio is optional - a box with no sound card should still run the ROM
-    if (SDL_InitSubSystem(SDL_INIT_AUDIO) != 0) {
-        std::cerr << "[platform] WARN: no audio subsystem (" << SDL_GetError() << "), running silent" << std::endl;
-    }
 }
 
 platform::subsystems::~subsystems() {
-    SDL_QuitSubSystem(SDL_INIT_AUDIO | SDL_INIT_VIDEO);
-}
-
-platform::beeper::beeper() {
-    SDL_AudioSpec want = {};
-    want.freq     = SAMPLE_RATE;
-    want.format   = AUDIO_S16SYS;
-    want.channels = 1;
-    want.samples  = AUDIO_BUFFER;
-    want.callback = audio_callback;
-    want.userdata = &this->phase;
-
-    SDL_AudioSpec got = {};
-    // no allowed changes, so SDL converts instead of handing back a format
-    // the callback isn't written for
-    this->device = SDL_OpenAudioDevice(nullptr, 0, &want, &got, 0);
-
-    if (this->device == 0) {
-        std::cerr << "[platform] WARN: no audio device (" << SDL_GetError() << "), running silent" << std::endl;
-    }
-}
-
-platform::beeper::~beeper() {
-    if (this->device != 0) {
-        SDL_CloseAudioDevice(this->device);
-    }
-}
-
-void platform::beeper::set(bool on) {
-    if (this->device == 0 || on == this->playing) {
-        return;
-    }
-
-    SDL_PauseAudioDevice(this->device, on ? 0 : 1);
-    this->playing = on;
+    SDL_QuitSubSystem(SDL_INIT_VIDEO);
 }
 
 platform::platform(const std::string& title, int scale) {
@@ -216,10 +155,6 @@ void platform::render(const std::array<uint8_t, DISPLAY_WIDTH * DISPLAY_HEIGHT>&
     sdl_check(SDL_RenderClear(this->renderer.get()), "SDL_RenderClear");
     sdl_check(SDL_RenderCopy(this->renderer.get(), this->texture.get(), nullptr, nullptr), "SDL_RenderCopy");
     SDL_RenderPresent(this->renderer.get());
-}
-
-void platform::set_beep(bool on) {
-    this->sound.set(on);
 }
 
 const std::array<uint8_t, 16>& platform::get_keypad() const {

@@ -92,7 +92,6 @@ namespace {
             }
 
             chip.tick_timers();
-            plat.set_beep(chip.get_sound_timer() > 0);
             plat.render(chip.get_display());
 
             std::this_thread::sleep_until(next_frame);

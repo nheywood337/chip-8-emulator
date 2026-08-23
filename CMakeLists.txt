@@ -13,6 +13,7 @@ include(FetchContent)
 set(SDL_SHARED          OFF CACHE BOOL "" FORCE)
 set(SDL_STATIC          ON  CACHE BOOL "" FORCE)
 set(SDL_TEST            OFF CACHE BOOL "" FORCE)
+set(SDL_AUDIO           OFF CACHE BOOL "" FORCE)
 set(SDL2_DISABLE_INSTALL ON CACHE BOOL "" FORCE)
 
 FetchContent_Declare(
