@@ -3,6 +3,7 @@
 #include "chip8_specs.h"
 #include <array>
 #include <cstdint>
+#include <memory>
 #include <stdexcept>
 #include <string>
 
@@ -15,6 +16,17 @@ class platform_error : public std::runtime_error {
         explicit platform_error(const std::string& msg) : std::runtime_error(msg) {}
 };
 
+// defined in platform.cpp, so ~platform() has to stay out of line
+struct sdl_window_deleter   { void operator()(SDL_Window* w) const; };
+struct sdl_renderer_deleter { void operator()(SDL_Renderer* r) const; };
+struct sdl_texture_deleter  { void operator()(SDL_Texture* t) const; };
+
+using window_ptr   = std::unique_ptr<SDL_Window, sdl_window_deleter>;
+using renderer_ptr = std::unique_ptr<SDL_Renderer, sdl_renderer_deleter>;
+using texture_ptr  = std::unique_ptr<SDL_Texture, sdl_texture_deleter>;
+
+static_assert(sizeof(window_ptr) == sizeof(SDL_Window*), "deleter is costing a word");
+
 class platform {
     public:
         platform(const std::string& title, int scale);
@@ -23,18 +35,40 @@ class platform {
         platform(const platform&) = delete;
         platform& operator=(const platform&) = delete;
 
-        bool poll_events();  // returns false once the user wants to quit
+        bool poll_events();
         void render(const std::array<uint8_t, DISPLAY_WIDTH * DISPLAY_HEIGHT>& display);
+        void set_beep(bool on);
 
         const std::array<uint8_t, 16>& get_keypad() const;
 
     private:
-        SDL_Window* window = nullptr;
-        SDL_Renderer* renderer = nullptr;
-        SDL_Texture* texture = nullptr;
+        struct subsystems {
+            subsystems();
+            ~subsystems();
+            subsystems(const subsystems&) = delete;
+            subsystems& operator=(const subsystems&) = delete;
+        };
+
+        class beeper {
+            public:
+                beeper();
+                ~beeper();
+                beeper(const beeper&) = delete;
+                beeper& operator=(const beeper&) = delete;
+
+                void set(bool on);
+
+            private:
+                uint32_t device = 0; 
+                double phase = 0.0;  
+                bool playing = false;
+        };
+
+        subsystems sdl;
+        window_ptr window;
+        renderer_ptr renderer;
+        texture_ptr texture;
+        beeper sound;
 
         std::array<uint8_t, 16> keypad = {};
-
-        // one packed RGBA word per pixel, reused every frame
-        std::array<uint32_t, DISPLAY_WIDTH * DISPLAY_HEIGHT> pixels = {};
 };
