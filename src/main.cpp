@@ -29,14 +29,12 @@ namespace {
         while (plat.poll_events()) {
             next_frame += FRAME_DURATION;
 
-            // the keypad lives in both places; 16 bytes a frame is the price of
-            // chip8_core not knowing SDL exists
             const auto& keys = plat.get_keypad();
-            for (uint8_t k = 0; k < 16; ++k) {
+            for (uint8_t k = 0; k < 16; k++) {
                 chip.set_keypad_state(k, keys[k] != 0);
             }
 
-            for (int i = 0; i < INSTRUCTIONS_PER_FRAME; ++i) {
+            for (int i = 0; i < INSTRUCTIONS_PER_FRAME; i++) {
                 chip.step();
             }
 
@@ -45,7 +43,6 @@ namespace {
 
             std::this_thread::sleep_until(next_frame);
 
-            // if we fell behind, resync rather than sprint through the backlog
             const auto now = clock::now();
             if (next_frame + FRAME_DURATION < now) {
                 next_frame = now;
@@ -98,6 +95,10 @@ int main(int argc, char* argv[]) {
         }
         catch (const chip8_error& e) {
             std::cerr << e.what() << std::endl;
+            return EXIT_FAILURE;
+        }
+        catch (const std::exception& e) {
+            std::cerr << "[main]: unexpected error: " << e.what() << std::endl;
             return EXIT_FAILURE;
         }
     }
