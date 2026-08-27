@@ -38,6 +38,9 @@ namespace {
                 chip.step();
             }
 
+            // read before the tick, or a ROM setting the timer to 1 never beeps
+            plat.set_beeping(chip.get_sound_timer() > 0);
+
             chip.tick_timers();
             plat.render(chip.get_display());
 

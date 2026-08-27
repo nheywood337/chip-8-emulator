@@ -5,6 +5,26 @@ namespace {
     constexpr uint32_t COLOR_ON  = 0xE0F8D0FF;
     constexpr uint32_t COLOR_OFF = 0x0F180FFF;
 
+    // square wave, deliberately quiet
+    constexpr int AUDIO_SAMPLE_RATE = 44100;
+    constexpr int BEEP_FREQUENCY    = 440;   // Hz
+    constexpr int BEEP_AMPLITUDE    = 3000;  // of a 32767 max
+    constexpr int BEEP_PERIOD       = AUDIO_SAMPLE_RATE / BEEP_FREQUENCY; // samples
+
+    // runs on SDL's audio thread. phase lives in platform so the wave carries on
+    // where it stopped - restarting it every beep clicks.
+    void audio_callback(void* userdata, uint8_t* stream, int len) {
+        auto* phase = static_cast<int*>(userdata);
+        auto* samples = reinterpret_cast<int16_t*>(stream);
+        const int sample_count = len / static_cast<int>(sizeof(int16_t));
+
+        for (int i = 0; i < sample_count; ++i) {
+            samples[i] = static_cast<int16_t>(*phase < BEEP_PERIOD / 2 ? BEEP_AMPLITUDE
+                                                                       : -BEEP_AMPLITUDE);
+            *phase = (*phase + 1) % BEEP_PERIOD;
+        }
+    }
+
     void sdl_check(int result, const char* what) {
         if (result != 0) {
             throw platform_error(std::string("[platform] ERROR: ") + what + ": " + SDL_GetError());
@@ -45,9 +65,15 @@ void sdl_texture_deleter::operator()(SDL_Texture* t) const   { SDL_DestroyTextur
 
 platform::subsystems::subsystems() {
     sdl_check(SDL_InitSubSystem(SDL_INIT_VIDEO), "SDL_InitSubSystem(VIDEO)");
+
+    // no sound card shouldn't stop a ROM from running
+    if (SDL_InitSubSystem(SDL_INIT_AUDIO) != 0) {
+        SDL_Log("[platform] WARNING: audio unavailable, running silently: %s", SDL_GetError());
+    }
 }
 
 platform::subsystems::~subsystems() {
+    SDL_QuitSubSystem(SDL_INIT_AUDIO);
     SDL_QuitSubSystem(SDL_INIT_VIDEO);
 }
 
@@ -97,9 +123,30 @@ platform::platform(const std::string& title, int scale) {
     if (this->texture == nullptr) {
         throw platform_error(std::string("[platform] ERROR: SDL_CreateTexture: ") + SDL_GetError());
     }
+
+    // no obtained spec, so SDL converts for us and the callback can always
+    // assume mono 16-bit
+    SDL_AudioSpec want = {};
+    want.freq     = AUDIO_SAMPLE_RATE;
+    want.format   = AUDIO_S16SYS;
+    want.channels = 1;
+    want.samples  = 512; // ~12 ms, short enough to keep up with the timer
+    want.callback = audio_callback;
+    want.userdata = &this->audio_phase;
+
+    // opens paused - set_beeping() starts it
+    this->audio_device = SDL_OpenAudioDevice(nullptr, 0, &want, nullptr, 0);
+
+    if (this->audio_device == 0) {
+        SDL_Log("[platform] WARNING: no beep: %s", SDL_GetError());
+    }
 }
 
-platform::~platform() = default;
+platform::~platform() {
+    if (this->audio_device != 0) {
+        SDL_CloseAudioDevice(this->audio_device);
+    }
+}
 
 bool platform::poll_events() {
     SDL_Event event;
@@ -155,6 +202,15 @@ void platform::render(const std::array<uint8_t, DISPLAY_WIDTH * DISPLAY_HEIGHT>&
     sdl_check(SDL_RenderClear(this->renderer.get()), "SDL_RenderClear");
     sdl_check(SDL_RenderCopy(this->renderer.get(), this->texture.get(), nullptr, nullptr), "SDL_RenderCopy");
     SDL_RenderPresent(this->renderer.get());
+}
+
+void platform::set_beeping(bool on) {
+    if (this->audio_device == 0 || on == this->beeping) {
+        return;
+    }
+
+    SDL_PauseAudioDevice(this->audio_device, on ? 0 : 1);
+    this->beeping = on;
 }
 
 const std::array<uint8_t, 16>& platform::get_keypad() const {

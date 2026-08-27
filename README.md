@@ -28,6 +28,12 @@ Disassemble a ROM into a listing:
 ./build/chip8 -d roms/<ROM_TO_LOAD>
 ```
 
+## Sound
+
+A 440 Hz square wave plays while the CHIP-8 sound timer is running. If the
+machine has no audio device the emulator says so on stderr and runs silently.
+`roms/7-beep.ch8` exercises it.
+
 ## Controls
 
 The keypad sits on the left of the keyboard. Esc quits.
