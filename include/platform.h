@@ -38,6 +38,9 @@ class platform {
         bool poll_events();
         void render(const std::array<uint8_t, DISPLAY_WIDTH * DISPLAY_HEIGHT>& display);
 
+        // buzzer on/off, driven by the sound timer
+        void set_beeping(bool on);
+
         const std::array<uint8_t, 16>& get_keypad() const;
 
     private:
@@ -52,6 +55,11 @@ class platform {
         window_ptr window;
         renderer_ptr renderer;
         texture_ptr texture;
+
+        // 0 means no device, and no sound.
+        uint32_t audio_device = 0;
+        int audio_phase = 0;    // square-wave position, only touched by the audio thread
+        bool beeping = false;   // saves poking SDL every frame
 
         std::array<uint8_t, 16> keypad = {};
 };
