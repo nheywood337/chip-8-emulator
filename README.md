@@ -1,7 +1,3 @@
-
-
-https://github.com/user-attachments/assets/f794c300-8c7a-4a48-b54e-3f0792c1874c
-
 # CHIP-8-Emulator
 A from-scratch CHIP-8 interpreter in C++
 
@@ -51,7 +47,10 @@ Z X C V  ->  A 0 B F
 
 # DEMO
 
-https://github.com/user-attachments/assets/8a10356d-7b5e-41df-9cf0-973b0e74b65a
+
+https://github.com/user-attachments/assets/e769c3f0-040f-4e03-9123-cb059a06008c
+
+
 
 
 
