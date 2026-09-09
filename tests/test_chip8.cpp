@@ -1053,15 +1053,16 @@ TEST_F(Chip8Test, ExecuteLD_V_I_LoadsRegistersFromMemory) {
         0x60, 0x11, // V0 = 0x11
         0x61, 0x22, // V1 = 0x22
         0x62, 0x33, // V2 = 0x33
-        0xF2, 0x55, // store V0..V2 at I..I+2
+        0xF2, 0x55, // store V0..V2 at I..I+2 (I now advances to 0x303)
         0x60, 0x00, // V0 = 0 (clear before read-back)
         0x61, 0x00, // V1 = 0
         0x62, 0x00, // V2 = 0
+        0xA3, 0x00, // I = 0x300 again (Fx55 left I at 0x303 - must reset before re-reading)
         0xF2, 0x65  // load V0..V2 back from I..I+2
     };
     chip8 vm(rom);
 
-    for (int i = 0; i < 9; ++i) {
+    for (int i = 0; i < 10; ++i) {   // was 9 - one more instruction now
         vm.execute(opcode::decode(vm.fetch()));
     }
 
