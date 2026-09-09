@@ -419,7 +419,7 @@ void chip8::execute_ld_i_v(const opcode::Instruction& instruction) {
     catch (const std::out_of_range& e) {
         throw chip8_error(std::string("[chip8]: write out of range: ") + e.what());
     }
-    // COSMAC VIP behavior: I is left pointing just past the last byte written
+    // COSMAC VIP behavior: I is left pointing just past the last byte read
     this->I += instruction.x + 1;
 }
 // [Fx65] Read registers V0 through VX from memory starting at address I
@@ -432,7 +432,7 @@ void chip8::execute_ld_v_i(const opcode::Instruction& instruction) {
     catch (const std::out_of_range& e) {
         throw chip8_error(std::string("[chip8]: read out of range: ") + e.what());
     }
-    // COSMAC VIP behavior: I is left pointing just past the last byte written
+    // COSMAC VIP behavior: I is left pointing just past the last byte read
     this->I += instruction.x + 1;
 }
 
